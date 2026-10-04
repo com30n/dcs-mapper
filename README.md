@@ -73,18 +73,18 @@ folder as static files.
 
 ## Development
 
-Needs Node.js 22 and Python 3.13:
+Needs Node.js 22:
 
 ```
 git clone https://github.com/com30n/dcs-mapper.git
 cd dcs-mapper
 npm --prefix web ci
-python tools/build_site.py
 npm --prefix web run dev
 ```
 
-Then open http://localhost:5173. The page reloads on every change in `web/`; run `build_site.py`
-again after changing aircraft, devices or translations. `npm --prefix web test` runs the tests,
+Then open http://localhost:5173. The page reloads on every change in `web/`; aircraft, devices and
+translations are read straight from the repository. `npm --prefix web test` runs the tests and
+checks the data files, `npm --prefix web run build` puts the whole site into `web/dist`, and
 `docker compose up --build` builds and runs the image from your checkout.
 
 ## Repository layout
@@ -97,10 +97,10 @@ again after changing aircraft, devices or translations. `npm --prefix web test` 
 - `web/` — the app, in React, TypeScript and Vite: `src/dcs` is how DCS reads and writes bindings
   (with tests against DCS's own results), `src/state` the app state and its actions,
   `src/features/<step>` the four screens, `src/ui` the shared pieces, `src/gamepad` the controller
-  polling.
-- `tools/` — `build_site.py` puts site and data together into `build/` with the lists the site
-  loads; `validate.py` checks the data; `extract_aircraft.py` and `extract_moza.py` read DCS and
-  MOZA Cockpit.
+  polling, `src/data/data.test.ts` the checks of the data files. `vite.config.ts` serves the data
+  and writes the lists the site loads.
+- `tools/` — `extract_aircraft.py` and `extract_moza.py` read DCS and MOZA Cockpit (Python 3.13,
+  only for rebuilding the data).
 - `Dockerfile`, `compose.yaml`, `nginx.conf` — the same build behind nginx in a container;
   `deploy/dcs-mapper` — the Helm chart that runs that container in Kubernetes.
 

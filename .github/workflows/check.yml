@@ -6,18 +6,6 @@ on:
     branches: [main]
 
 jobs:
-  data:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
-        with:
-          python-version: '3.13'
-      - name: Check aircraft and device files
-        run: python tools/validate.py
-      - name: Build the site
-        run: python tools/build_site.py
-
   web:
     runs-on: ubuntu-latest
     steps:

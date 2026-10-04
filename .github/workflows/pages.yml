@@ -19,23 +19,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
-        with:
-          python-version: '3.13'
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: web/package-lock.json
-      - run: python tools/validate.py
       - run: npm ci
+        working-directory: web
+      - run: npm test
         working-directory: web
       - run: npm run build
         working-directory: web
-      - run: python tools/build_site.py
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: build
+          path: web/dist
 
   deploy:
     if: github.event.repository.has_pages

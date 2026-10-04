@@ -24,9 +24,6 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
-        with:
-          python-version: '3.13'
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
@@ -35,17 +32,15 @@ jobs:
       - uses: azure/setup-helm@v4
       - id: version
         run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-      - run: python tools/validate.py
       - run: npm ci
         working-directory: web
       - run: npm test
         working-directory: web
       - run: npm run build
         working-directory: web
-      - run: python tools/build_site.py
       - name: Pack the site
-        working-directory: build
-        run: zip -qr "../dcs-mapper-site-${{ steps.version.outputs.version }}.zip" .
+        working-directory: web/dist
+        run: zip -qr "../../dcs-mapper-site-${{ steps.version.outputs.version }}.zip" .
       - name: Pack the chart and push it to GHCR
         env:
           VERSION: ${{ steps.version.outputs.version }}

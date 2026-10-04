@@ -14,7 +14,7 @@ locales/<language>.json       the site's own texts
 
 You can add files without git: open the folder on GitHub, choose **Add file → Upload files**, drop
 the files in, and let GitHub open the pull request for you. Every pull request is checked
-automatically (`tools/validate.py`); if the check fails, its log names the file and what is wrong.
+automatically (`web/src/data/data.test.ts`); if the check fails, its log names the file and what is wrong.
 If you would rather not touch the repository, open an issue with the **Add a device** or
 **Add an aircraft** form and attach the files.
 
@@ -102,9 +102,13 @@ pictures and one `device.json`:
 
 ## Check your files locally
 
+Needs Node.js 22:
+
 ```
-python tools/validate.py
-python tools/build_site.py --serve 8080
+npm --prefix web ci
+npm --prefix web test
+npm --prefix web run dev
 ```
 
-Then open http://localhost:8080. With Docker instead: `docker compose up --build`.
+Then open http://localhost:5173. With Docker instead: `docker compose up --build`, then
+http://localhost:8080.
