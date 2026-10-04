@@ -1,0 +1,6 @@
+.app { min-height: 100vh; display: flex; flex-direction: column; }
+.fixed { height: 100vh; overflow: hidden; }
+
+@media (max-width: 960px) {
+  .fixed { height: auto; overflow: visible; }
+}

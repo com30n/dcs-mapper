@@ -1,0 +1,468 @@
+{
+ "name": "MOZA MTQ Throttle Panel + TQF grip",
+ "role": "throttle",
+ "dcsName": "MOZA AB9 FFB Base",
+ "preset": null,
+ "axes": [
+  {
+   "input": "JOY_RX",
+   "label": "RX"
+  },
+  {
+   "input": "JOY_RY",
+   "label": "RY"
+  },
+  {
+   "input": "JOY_SLIDER1",
+   "label": "Slider"
+  },
+  {
+   "input": "JOY_SLIDER2",
+   "label": "Dial"
+  },
+  {
+   "input": "JOY_X",
+   "label": "X"
+  },
+  {
+   "input": "JOY_Y",
+   "label": "Y"
+  }
+ ],
+ "unverified": [
+  "axes"
+ ],
+ "pictures": {
+  "line.png": {
+   "size": [
+    1705,
+    2288
+   ],
+   "marks": [
+    {
+     "input": "JOY_BTN1",
+     "x": 10.64,
+     "y": 60.98
+    },
+    {
+     "input": "JOY_BTN2",
+     "x": 10.64,
+     "y": 70.24
+    },
+    {
+     "input": "JOY_BTN3",
+     "x": 10.64,
+     "y": 79.49
+    },
+    {
+     "input": "JOY_BTN4",
+     "x": 10.64,
+     "y": 88.75
+    },
+    {
+     "input": "JOY_BTN5",
+     "x": 29.21,
+     "y": 62.98
+    },
+    {
+     "input": "JOY_BTN6",
+     "x": 44.06,
+     "y": 62.98
+    },
+    {
+     "input": "JOY_BTN7",
+     "x": 29.21,
+     "y": 75.5
+    },
+    {
+     "input": "JOY_BTN8",
+     "x": 44.06,
+     "y": 75.5
+    },
+    {
+     "input": "JOY_BTN9",
+     "x": 29.21,
+     "y": 87.84
+    },
+    {
+     "input": "JOY_BTN10",
+     "x": 44.06,
+     "y": 87.84
+    },
+    {
+     "input": "JOY_BTN11",
+     "x": 59.16,
+     "y": 57.71
+    },
+    {
+     "input": "JOY_BTN12",
+     "x": 70.05,
+     "y": 57.71
+    },
+    {
+     "input": "JOY_BTN13",
+     "x": 64.6,
+     "y": 61.71
+    },
+    {
+     "input": "JOY_BTN14",
+     "x": 59.16,
+     "y": 70.78
+    },
+    {
+     "input": "JOY_BTN15",
+     "x": 70.05,
+     "y": 70.78
+    },
+    {
+     "input": "JOY_BTN16",
+     "x": 64.6,
+     "y": 74.77
+    },
+    {
+     "input": "JOY_BTN22",
+     "x": 84.41,
+     "y": 74.59
+    },
+    {
+     "input": "JOY_BTN23",
+     "x": 78.71,
+     "y": 74.41
+    },
+    {
+     "input": "JOY_BTN24",
+     "x": 90.59,
+     "y": 74.41
+    },
+    {
+     "input": "JOY_BTN25",
+     "x": 63.12,
+     "y": 90.02
+    },
+    {
+     "input": "JOY_BTN26",
+     "x": 63.12,
+     "y": 94.19
+    },
+    {
+     "input": "JOY_BTN27",
+     "x": 75.74,
+     "y": 90.02
+    },
+    {
+     "input": "JOY_BTN28",
+     "x": 75.74,
+     "y": 94.19
+    },
+    {
+     "input": "JOY_BTN29",
+     "x": 88.37,
+     "y": 90.02
+    },
+    {
+     "input": "JOY_BTN30",
+     "x": 88.37,
+     "y": 94.19
+    },
+    {
+     "input": "JOY_BTN43",
+     "x": 4.46,
+     "y": 13.61
+    },
+    {
+     "input": "JOY_BTN31",
+     "x": 4.46,
+     "y": 19.24
+    },
+    {
+     "input": "JOY_BTN41",
+     "x": 31.93,
+     "y": 12.89
+    },
+    {
+     "input": "JOY_BTN32",
+     "x": 31.93,
+     "y": 36.3
+    },
+    {
+     "input": "JOY_BTN33",
+     "x": 31.93,
+     "y": 31.22
+    },
+    {
+     "input": "JOY_BTN42",
+     "x": 55.69,
+     "y": 12.89
+    },
+    {
+     "input": "JOY_BTN34",
+     "x": 55.69,
+     "y": 36.3
+    },
+    {
+     "input": "JOY_BTN35",
+     "x": 55.69,
+     "y": 31.22
+    },
+    {
+     "input": "JOY_BTN36",
+     "x": 93.81,
+     "y": 41.2
+    },
+    {
+     "input": "JOY_BTN37",
+     "x": 93.81,
+     "y": 33.58
+    },
+    {
+     "input": "JOY_BTN38",
+     "x": 93.81,
+     "y": 25.95
+    },
+    {
+     "input": "JOY_BTN39",
+     "x": 93.81,
+     "y": 18.33
+    },
+    {
+     "input": "JOY_BTN40",
+     "x": 93.81,
+     "y": 10.71
+    },
+    {
+     "input": "JOY_BTN19",
+     "x": 113.12,
+     "y": 54.63
+    },
+    {
+     "input": "JOY_BTN17",
+     "x": 103.71,
+     "y": 61.52
+    },
+    {
+     "input": "JOY_BTN18",
+     "x": 106.47,
+     "y": 56.65
+    },
+    {
+     "input": "JOY_SLIDER2",
+     "x": 10.4,
+     "y": -10.16
+    },
+    {
+     "input": "JOY_RX",
+     "x": 36.14,
+     "y": -10.16
+    },
+    {
+     "input": "JOY_RY",
+     "x": 64.85,
+     "y": -10.16
+    }
+   ]
+  },
+  "zd1_2_light.png": {
+   "size": [
+    840,
+    496
+   ],
+   "marks": [
+    {
+     "input": "JOY_BTN52",
+     "x": 80.0,
+     "y": -22.18
+    },
+    {
+     "input": "JOY_BTN56",
+     "x": 80.0,
+     "y": -37.5
+    },
+    {
+     "input": "JOY_BTN53",
+     "x": 89.05,
+     "y": -22.18
+    },
+    {
+     "input": "JOY_BTN55",
+     "x": 80.0,
+     "y": -6.85
+    },
+    {
+     "input": "JOY_BTN54",
+     "x": 70.95,
+     "y": -22.18
+    },
+    {
+     "input": "JOY_BTN57",
+     "x": 110.0,
+     "y": 16.94
+    },
+    {
+     "input": "JOY_BTN61",
+     "x": 110.0,
+     "y": 1.61
+    },
+    {
+     "input": "JOY_BTN58",
+     "x": 119.05,
+     "y": 16.94
+    },
+    {
+     "input": "JOY_BTN60",
+     "x": 110.0,
+     "y": 32.26
+    },
+    {
+     "input": "JOY_BTN59",
+     "x": 100.95,
+     "y": 16.94
+    },
+    {
+     "input": "JOY_SLIDER1",
+     "x": -21.9,
+     "y": -5.65
+    }
+   ]
+  },
+  "zd1_1_light.png": {
+   "size": [
+    840,
+    496
+   ],
+   "marks": [
+    {
+     "input": "JOY_BTN49",
+     "x": 78.81,
+     "y": 46.37
+    },
+    {
+     "input": "JOY_BTN50",
+     "x": 84.76,
+     "y": 45.97
+    },
+    {
+     "input": "JOY_BTN51",
+     "x": 73.33,
+     "y": 45.97
+    }
+   ]
+  },
+  "zd2_2_light.png": {
+   "size": [
+    840,
+    496
+   ],
+   "marks": [
+    {
+     "input": "JOY_X",
+     "x": 103.33,
+     "y": 10.89
+    }
+   ]
+  },
+  "zd2_1_light.png": {
+   "size": [
+    840,
+    496
+   ],
+   "marks": [
+    {
+     "input": "JOY_BTN20",
+     "x": 10.21,
+     "y": 3.68
+    },
+    {
+     "input": "JOY_BTN21",
+     "x": 12.86,
+     "y": 14.52
+    },
+    {
+     "input": "JOY_BTN63",
+     "x": 65.0,
+     "y": 41.94
+    },
+    {
+     "input": "JOY_BTN64",
+     "x": 72.14,
+     "y": 38.31
+    },
+    {
+     "input": "JOY_BTN65",
+     "x": 49.52,
+     "y": 42.34
+    },
+    {
+     "input": "JOY_BTN62",
+     "x": 37.62,
+     "y": 33.47
+    },
+    {
+     "input": "JOY_Y",
+     "x": 88.57,
+     "y": 32.26
+    }
+   ]
+  },
+  "card.png": {
+   "size": [
+    289,
+    289
+   ],
+   "marks": []
+  }
+ },
+ "card": {
+  "picture": "card.png"
+ },
+ "views": [
+  {
+   "name": "Main",
+   "size": [
+    1141,
+    913
+   ],
+   "layers": [
+    {
+     "picture": "line.png",
+     "at": [
+      12.18,
+      25.19,
+      35.41
+     ]
+    },
+    {
+     "picture": "zd1_2_light.png",
+     "at": [
+      50.83,
+      20.59,
+      36.81
+     ]
+    },
+    {
+     "picture": "zd1_1_light.png",
+     "at": [
+      50.83,
+      20.59,
+      36.81
+     ]
+    },
+    {
+     "picture": "zd2_2_light.png",
+     "at": [
+      50.83,
+      58.38,
+      36.81
+     ]
+    },
+    {
+     "picture": "zd2_1_light.png",
+     "at": [
+      50.83,
+      58.38,
+      36.81
+     ]
+    }
+   ]
+  }
+ ]
+}

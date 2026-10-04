@@ -1,0 +1,7 @@
+.bottom { position: sticky; bottom: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; padding: 14px 32px; background: var(--surface); border-top: 1px solid var(--line); }
+.flat { position: static; }
+.right { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+
+@media (max-width: 720px) {
+  .bottom { padding-left: 16px; padding-right: 16px; }
+}

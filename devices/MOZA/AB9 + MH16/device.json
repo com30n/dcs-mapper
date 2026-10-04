@@ -1,0 +1,221 @@
+{
+ "name": "MOZA AB9 FFB Base + MH16 grip",
+ "role": "stick",
+ "dcsName": "MOZA AB9 FFB Base",
+ "axes": [
+  {
+   "input": "JOY_X",
+   "label": "Stick left / right"
+  },
+  {
+   "input": "JOY_Y",
+   "label": "Stick forward / back"
+  }
+ ],
+ "pictures": {
+  "mh16.png": {
+   "size": [
+    1141,
+    909
+   ],
+   "marks": [
+    {
+     "input": "JOY_BTN1",
+     "x": 14.99,
+     "y": 50.17
+    },
+    {
+     "input": "JOY_BTN6",
+     "x": 19.89,
+     "y": 50.17
+    },
+    {
+     "input": "JOY_BTN25",
+     "x": 59.25,
+     "y": 34.87
+    },
+    {
+     "input": "JOY_BTN26",
+     "x": 59.25,
+     "y": 37.29
+    },
+    {
+     "input": "JOY_BTN2",
+     "x": 65.56,
+     "y": 31.46
+    },
+    {
+     "input": "JOY_BTN3",
+     "x": 27.78,
+     "y": 68.54
+    },
+    {
+     "input": "JOY_BTN4",
+     "x": 21.21,
+     "y": 68.54
+    },
+    {
+     "input": "JOY_BTN5",
+     "x": 76.69,
+     "y": 42.24
+    },
+    {
+     "input": "JOY_BTN19",
+     "x": 40.4,
+     "y": 48.51
+    },
+    {
+     "input": "JOY_BTN15",
+     "x": 40.4,
+     "y": 44.77
+    },
+    {
+     "input": "JOY_BTN16",
+     "x": 43.38,
+     "y": 48.51
+    },
+    {
+     "input": "JOY_BTN17",
+     "x": 40.4,
+     "y": 52.26
+    },
+    {
+     "input": "JOY_BTN18",
+     "x": 37.42,
+     "y": 48.51
+    },
+    {
+     "input": "JOY_BTN7",
+     "x": 53.64,
+     "y": 42.57
+    },
+    {
+     "input": "JOY_BTN8",
+     "x": 56.62,
+     "y": 46.31
+    },
+    {
+     "input": "JOY_BTN9",
+     "x": 53.64,
+     "y": 50.06
+    },
+    {
+     "input": "JOY_BTN10",
+     "x": 50.66,
+     "y": 46.31
+    },
+    {
+     "input": "JOY_BTN24",
+     "x": 59.25,
+     "y": 18.59
+    },
+    {
+     "input": "JOY_BTN20",
+     "x": 59.25,
+     "y": 14.85
+    },
+    {
+     "input": "JOY_BTN21",
+     "x": 62.23,
+     "y": 18.59
+    },
+    {
+     "input": "JOY_BTN22",
+     "x": 59.25,
+     "y": 22.33
+    },
+    {
+     "input": "JOY_BTN23",
+     "x": 56.27,
+     "y": 18.59
+    },
+    {
+     "input": "JOY_BTN_POV1_U",
+     "x": 72.13,
+     "y": 12.43
+    },
+    {
+     "input": "JOY_BTN_POV1_UR",
+     "x": 75.6,
+     "y": 14.24
+    },
+    {
+     "input": "JOY_BTN_POV1_R",
+     "x": 77.04,
+     "y": 18.59
+    },
+    {
+     "input": "JOY_BTN_POV1_DR",
+     "x": 75.6,
+     "y": 22.95
+    },
+    {
+     "input": "JOY_BTN_POV1_D",
+     "x": 72.13,
+     "y": 24.75
+    },
+    {
+     "input": "JOY_BTN_POV1_DL",
+     "x": 68.66,
+     "y": 22.95
+    },
+    {
+     "input": "JOY_BTN_POV1_L",
+     "x": 67.22,
+     "y": 18.59
+    },
+    {
+     "input": "JOY_BTN_POV1_UL",
+     "x": 68.66,
+     "y": 14.24
+    },
+    {
+     "input": "JOY_BTN11",
+     "x": 83.17,
+     "y": 33.66
+    },
+    {
+     "input": "JOY_BTN12",
+     "x": 86.15,
+     "y": 37.4
+    },
+    {
+     "input": "JOY_BTN13",
+     "x": 83.17,
+     "y": 41.14
+    },
+    {
+     "input": "JOY_BTN14",
+     "x": 80.19,
+     "y": 37.4
+    },
+    {
+     "input": "JOY_X",
+     "x": 71.25,
+     "y": 83.61
+    },
+    {
+     "input": "JOY_Y",
+     "x": 32.43,
+     "y": 83.61
+    }
+   ]
+  },
+  "card.png": {
+   "size": [
+    578,
+    578
+   ],
+   "marks": []
+  }
+ },
+ "card": {
+  "picture": "card.png"
+ },
+ "views": [
+  {
+   "name": "Main",
+   "picture": "mh16.png"
+  }
+ ]
+}

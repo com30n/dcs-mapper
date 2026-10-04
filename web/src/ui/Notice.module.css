@@ -1,0 +1,8 @@
+.notice { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; margin: 0; }
+.notice > button { align-self: flex-start; }
+.ok { background: var(--ok-soft); border-color: var(--ok-line); color: var(--ok-text); }
+.warn { background: var(--warn-soft); border-color: var(--warn-line); color: var(--warn-text); }
+.compact { padding: 10px 12px; font-size: 14px; border-radius: 8px; }
+.box { margin: 0; padding: 10px 12px; font-size: 14px; border-radius: 8px; }
+.boxWarn { background: var(--warn-soft); border: 1px solid var(--warn-line); color: var(--warn-text); }
+.boxError { background: var(--danger-soft); border: 1px solid var(--danger-line); color: var(--danger); }

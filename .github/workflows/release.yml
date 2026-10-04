@@ -1,0 +1,94 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  image:
+    uses: ./.github/workflows/image.yml
+    permissions:
+      contents: read
+      packages: write
+
+  tools:
+    uses: ./.github/workflows/tools.yml
+    permissions:
+      contents: read
+
+  release:
+    needs: [image, tools]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: azure/setup-helm@v4
+      - id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+      - run: python tools/validate.py
+      - run: npm ci
+        working-directory: web
+      - run: npm test
+        working-directory: web
+      - run: npm run build
+        working-directory: web
+      - run: python tools/build_site.py
+      - name: Pack the site
+        working-directory: build
+        run: zip -qr "../dcs-mapper-site-${{ steps.version.outputs.version }}.zip" .
+      - name: Pack the chart and push it to GHCR
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          helm package deploy/dcs-mapper --version "$VERSION" --app-version "$VERSION"
+          echo "$GITHUB_TOKEN" | helm registry login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          helm push "dcs-mapper-$VERSION.tgz" "oci://ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/charts"
+      - uses: actions/download-artifact@v8
+        with:
+          name: hotas-mapper-export-module
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: HOTAS Mapper ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            dcs-mapper-site-${{ steps.version.outputs.version }}.zip
+            dcs-mapper-${{ steps.version.outputs.version }}.tgz
+            hotas-mapper-export-module.exe
+          body: |
+            Open **https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/**. It runs in your browser; there is nothing to install.
+
+            ### Docker
+
+            ```
+            docker run --rm -p 8080:8080 ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ steps.version.outputs.version }}
+            ```
+
+            Then open http://localhost:8080.
+
+            ### Kubernetes
+
+            ```
+            helm install hotas oci://ghcr.io/${{ github.repository_owner }}/charts/dcs-mapper --version ${{ steps.version.outputs.version }} --namespace hotas --create-namespace
+            kubectl --namespace hotas port-forward service/hotas-dcs-mapper 8080:80
+            ```
+
+            Then open http://localhost:8080. Ingress, Gateway API and the other settings: [values.yaml](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/deploy/dcs-mapper/values.yaml).
+
+            ### Any web server
+
+            Unzip `dcs-mapper-site-${{ steps.version.outputs.version }}.zip` and serve the folder as static files.
+
+            ### Adding an aircraft
+
+            `hotas-mapper-export-module.exe` reads a DCS module from your DCS install. See [CONTRIBUTING.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/CONTRIBUTING.md).

@@ -1,0 +1,27 @@
+name: tools
+
+on:
+  push:
+    branches: [main]
+    paths: ['tools/extract_aircraft.py', 'tools/catalog.lua', '.github/workflows/tools.yml']
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - run: pip install pyinstaller
+      - name: Build the module export tool
+        run: pyinstaller --onefile --console --name hotas-mapper-export-module --add-data "tools/catalog.lua;." tools/extract_aircraft.py
+      - uses: actions/upload-artifact@v7
+        with:
+          name: hotas-mapper-export-module
+          path: dist/hotas-mapper-export-module.exe

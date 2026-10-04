@@ -1,0 +1,32 @@
+@import './tokens.css';
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--ground); color: var(--ink); font: 400 16px/1.45 var(--sans); }
+#root { min-height: 100vh; }
+h1 { margin: 0; font-size: 40px; line-height: 1.1; }
+h2 { margin: 0; font-size: 22px; }
+h3 { margin: 0; font-size: 18px; }
+p { margin: 0; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: 0.5; }
+a { color: var(--blue); }
+
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.mono { font-family: var(--mono); font-size: 13px; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.eyebrow { font: 500 12px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.stack { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.plain { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.hint { font-size: 13px; color: var(--ink-2); }
+.hint.warn { color: var(--warn-text); font-weight: 600; }
+.warn-text { color: var(--warn-text); font-weight: 600; }
+.ok-text { color: var(--ok-text); font-weight: 600; }
+.busy-text { color: var(--blue-dark); font-weight: 600; }
+.text { width: 100%; min-height: 42px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); }
+
+@media (max-width: 720px) {
+  h1 { font-size: 30px; }
+}

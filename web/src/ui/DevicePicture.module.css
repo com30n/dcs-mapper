@@ -1,0 +1,6 @@
+.picture { flex: none; position: relative; width: 100%; background: var(--surface); overflow: hidden; container-type: inline-size; }
+.layer { position: absolute; overflow: hidden; pointer-events: none; }
+.layer img { position: absolute; max-width: none; pointer-events: none; }
+.thumb { --box: 140px; align-self: stretch; height: 150px; display: flex; align-items: center; justify-content: center; background: var(--surface-2); border-radius: 8px; overflow: hidden; }
+.thumb .picture { width: min(100%, calc(var(--box) * var(--ratio))); background: none; }
+.small { --box: 52px; flex: none; align-self: center; width: 56px; height: 56px; }

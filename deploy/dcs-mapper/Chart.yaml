@@ -1,0 +1,9 @@
+apiVersion: v2
+name: dcs-mapper
+description: HOTAS Mapper for DCS World, a static site served by nginx
+type: application
+version: 0.0.0
+appVersion: latest
+home: https://github.com/com30n/dcs-mapper
+sources:
+  - https://github.com/com30n/dcs-mapper

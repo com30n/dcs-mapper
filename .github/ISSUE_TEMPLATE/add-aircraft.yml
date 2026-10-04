@@ -1,0 +1,24 @@
+name: Add an aircraft
+description: Send the command list of a DCS module
+title: "Add aircraft: "
+labels: [aircraft]
+body:
+  - type: input
+    id: profile
+    attributes:
+      label: Input profile
+      description: The module name the export tool printed, e.g. FA-18C_hornet
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: DCS version
+      description: From the bottom of the DCS main menu, e.g. 2.9.30.28536
+  - type: textarea
+    id: files
+    attributes:
+      label: Files
+      description: Zip the aircraft/<module> folder the export tool made and drag the zip here
+    validations:
+      required: true

@@ -1,0 +1,40 @@
+.valueRow { display: flex; flex-direction: column; gap: 4px; }
+.valueRow label { font-size: 15px; font-weight: 600; }
+.valueRow > div { display: flex; gap: 8px; align-items: center; }
+.valueRow input[type="range"] { flex: 1; min-width: 0; accent-color: var(--blue); }
+.number { width: 76px; min-height: 36px; padding: 0 8px; font: 500 14px var(--mono); border: 1px solid var(--line-2); border-radius: 6px; }
+.check { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; font-size: 15px; font-weight: 600; cursor: pointer; }
+.check input { width: 18px; height: 18px; accent-color: var(--blue); }
+.grow { flex: 1 1 200px; }
+
+.axes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 18px; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--line-3); border-radius: 10px; color: var(--ink-2); }
+.body { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+.chart { margin: 0; flex: 0 1 380px; display: flex; flex-direction: column; gap: 8px; }
+.chart svg { width: 100%; max-width: 380px; aspect-ratio: 1; background: var(--surface-2); border: 1px solid var(--line-3); border-radius: 12px; padding: 8px; }
+.chart figcaption { display: flex; justify-content: space-between; color: var(--ink-2); }
+.chart input[type="range"] { width: 100%; accent-color: var(--warn); }
+.chartBg { fill: var(--surface); }
+.chartGrid { stroke: var(--line-3); }
+.chartAxes { stroke: var(--line-2); }
+.diagonal { stroke: var(--line-2); stroke-dasharray: 4 4; fill: none; }
+.curve { fill: none; stroke: var(--blue); stroke-width: 2.5; stroke-linejoin: round; }
+.guide { fill: none; stroke: var(--warn); stroke-dasharray: 3 3; }
+.livePoint { fill: var(--warn); stroke: #fff; stroke-width: 2; }
+.controls { flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.points { display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--surface-2); border: 1px solid var(--line-3); border-radius: 10px; }
+.pointGrid { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 4px; justify-items: center; }
+.point { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.point .number { width: 46px; padding: 0 2px; text-align: center; font-size: 12px; }
+.vertical { writing-mode: vertical-lr; direction: rtl; width: 24px; height: 110px; accent-color: var(--blue); }
+
+.columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.column { display: flex; flex-direction: column; gap: 10px; padding: 16px; background: var(--surface-2); border: 1px solid var(--line-3); border-radius: 12px; }
+.column > button:last-child { align-self: flex-start; }
+.item { display: flex; gap: 10px; align-items: flex-start; padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.item > i { margin-top: 12px; flex: none; }
+.strong { font-weight: 700; min-height: 36px; }
+.emptyNote { margin: 0; padding: 12px; font-size: 14px; color: var(--muted); background: var(--surface); border: 1px dashed var(--line-2); border-radius: 10px; }
+.add { display: flex; flex-direction: column; gap: 14px; padding: 18px; background: var(--surface-2); border: 1px solid var(--line-3); border-radius: 12px; }
+.addFields { align-items: flex-end; }
+.fieldBlock { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600; flex: 0 1 160px; }
+.fieldGrow { flex: 1 1 220px; }

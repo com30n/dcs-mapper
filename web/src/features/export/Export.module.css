@@ -1,0 +1,19 @@
+.file { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding: 14px 16px; margin-top: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.file :global(.mono) { word-break: break-all; }
+.diff { flex-basis: 100%; }
+.diff summary { cursor: pointer; color: var(--blue); font-weight: 600; font-size: 14px; }
+.diff pre { margin: 8px 0 0; padding: 10px 12px; max-height: 360px; overflow: auto; background: var(--surface-2); border: 1px solid var(--line-3); border-radius: 8px; white-space: pre-wrap; }
+.add { color: var(--ok-text); }
+.del { color: var(--danger); }
+.save { display: flex; flex-direction: column; gap: 12px; padding: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+.save > button { align-self: flex-start; }
+.install { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 4px; color: var(--ink-2); }
+.fileDiff { margin-top: 8px; max-height: 420px; overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; font-size: 13px; line-height: 1.55; }
+.fileHead { display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; background: var(--surface-2); border-bottom: 1px solid var(--line-3); color: var(--ink-2); }
+.line { display: flex; gap: 4px; padding: 0 12px; min-width: max-content; color: var(--ink-2); }
+.hunk { background: var(--ground); color: var(--muted); }
+.lineAdd { background: var(--ok-soft); color: var(--ok-text); }
+.lineDel { background: var(--danger-soft); color: var(--danger); }
+.sign { flex: none; width: 14px; user-select: none; }
+.code { white-space: pre; tab-size: 4; }
+.sheet { display: block; margin-top: 8px; width: 702px; max-width: 100%; aspect-ratio: 1754 / 1240; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }

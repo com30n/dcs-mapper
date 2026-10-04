@@ -1,0 +1,19 @@
+.primary, .secondary, .ghost, .ghostDark { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 22px; border-radius: 10px; font-weight: 600; font-size: 16px; }
+.primary { background: var(--ink); color: #fff; border: 1px solid var(--ink); }
+.secondary { background: var(--surface); color: var(--ink); border: 1px solid var(--line-2); }
+.ghost { background: transparent; color: #fff; border: 1px solid rgba(255, 255, 255, 0.6); }
+.ghostDark { background: var(--surface); color: var(--ink); border: 1px solid var(--line-2); }
+.small { min-height: 38px; padding: 0 12px; font-size: 14px; }
+.link { border: 0; background: none; color: var(--blue); font-weight: 600; min-height: 48px; padding: 0 8px; }
+.link.small { min-height: 32px; font-size: 13px; padding: 0 4px; }
+.icon { flex: none; width: 36px; min-height: 36px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 18px; line-height: 1; color: var(--muted); }
+.modifier { color: var(--modifier); border-color: var(--modifier); }
+.warn { color: var(--warn-text); border-color: var(--warn-line); }
+.ok { color: var(--ok-text); border-color: var(--ok-line); }
+.blue { color: var(--blue); border-color: var(--blue-line); }
+.chip { min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--surface); font-weight: 600; font-size: 13px; }
+.chip[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+.onDark { background: transparent; color: #fff; border-color: rgba(255, 255, 255, 0.6); }
+.onDark[aria-pressed="true"] { background: #fff; color: var(--modifier); border-color: #fff; }
+.dashed { background: transparent; color: inherit; border-style: dashed; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }

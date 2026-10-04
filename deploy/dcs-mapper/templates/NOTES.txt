@@ -1,0 +1,11 @@
+{{- if .Values.ingress.enabled }}
+HOTAS Mapper is at {{ if .Values.ingress.tls }}https{{ else }}http{{ end }}://{{ first .Values.ingress.hosts }}
+{{- else if .Values.httpRoute.enabled }}
+HOTAS Mapper is attached to your Gateway{{ with .Values.httpRoute.hostnames }} as {{ join ", " . }}{{ end }}.
+{{- else }}
+HOTAS Mapper has no ingress. To open it from this machine:
+
+  kubectl --namespace {{ .Release.Namespace }} port-forward service/{{ include "hotas.fullname" . }} 8080:{{ .Values.service.port }}
+
+and then open http://localhost:8080
+{{- end }}

@@ -1,0 +1,40 @@
+name: Add a device
+description: Send a stick, throttle, pedals or panel with its picture
+title: "Add device: "
+labels: [device]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Device
+      description: Maker, model and grip, e.g. "VIRPIL MongoosT-50CM3 base + grip"
+    validations:
+      required: true
+  - type: input
+    id: dcs-name
+    attributes:
+      label: Name in DCS
+      description: As the DCS Controls screen shows it, without the {…} part
+    validations:
+      required: true
+  - type: dropdown
+    id: role
+    attributes:
+      label: Type
+      options: [stick, throttle, pedals, panel, other]
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: Pictures and button numbers
+      description: Drag the pictures here. Attach device.json if you have one; otherwise say which number is which button.
+    validations:
+      required: true
+  - type: checkboxes
+    id: rights
+    attributes:
+      label: Pictures
+      options:
+        - label: I made these pictures myself or am allowed to share them
+          required: true
