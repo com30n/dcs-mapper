@@ -75,7 +75,7 @@ export function SetupCard({ s, entry }: { s: SessionState; entry: Entry }) {
   const name = entry.dcsId || device.dcsName
   const candidates = candidatesFor(s, name)
   return (
-    <article className={styles.setup}>
+    <article id={entry.uid} className={styles.setup}>
       <div className={styles.head}>
         <DeviceThumb device={device} small />
         <div className="stack"><span className="eyebrow">{t(`role.${device.role}`)}</span><strong>{device.name}</strong></div>

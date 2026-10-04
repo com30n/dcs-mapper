@@ -8,6 +8,7 @@ export interface Entry {
   generic: string | null
   dcsId: string
   start: Start
+  startChosen: boolean
   fileText: string | null
   fileName: string | null
   ready: string | null

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router'
 import { sameId, templateOf } from '../../dcs/combos'
 import { useWords } from '../../i18n/i18n'
 import { fail } from '../../state/aircraft'
-import { addDevice, addFiles, turnOn } from '../../state/devices'
+import { addFiles, toggleDevice, turnOn } from '../../state/devices'
 import { connectFolder } from '../../state/folder'
 import { setupOf, useSession, type SessionState } from '../../state/session'
 import { Button, Chip, Chips } from '../../ui/Button'
@@ -17,6 +17,14 @@ import { Page } from '../../ui/Page'
 import { SearchField } from '../../ui/SearchField'
 import styles from './Devices.module.css'
 import { SetupCard } from './SetupCard'
+
+function pointAt(uids: string[]) {
+  if (uids.length < 2) return
+  uids.map((uid) => document.getElementById(uid)).forEach((card, i) => {
+    if (!i) card?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    card?.animate([{ boxShadow: 'inset 0 0 0 3px var(--blue)' }, { boxShadow: 'inset 0 0 0 3px transparent' }], 1600)
+  })
+}
 
 const ROLES = ['all', 'stick', 'throttle', 'pedals'] as const
 
@@ -78,7 +86,7 @@ export function DevicesScreen() {
   const library = s.library.filter((d) => (role === 'all' || d.role === role) && `${d.name} ${d.dcsName}`.toLowerCase().includes(query))
   return (
     <>
-      <Page eyebrow={`${t('step.of', { n: 2 })} · ${tr(s.catalog!.name)}`} title={t('devices.title')} lead={t('devices.lead')}>
+      <Page fill eyebrow={`${t('step.of', { n: 2 })} · ${tr(s.catalog!.name)}`} title={t('devices.title')} lead={t('devices.lead')}>
         <div className={styles.split}>
           <section className={styles.library} aria-labelledby="lib">
             <h2 id="lib">{t('devices.library')}</h2>
@@ -86,14 +94,15 @@ export function DevicesScreen() {
               <SearchField label={t('devices.search')} value={search} onChange={setSearch} />
               <Chips>{ROLES.map((r) => <Chip key={r} pressed={role === r} onClick={() => setRole(r)}>{t(`devices.filter.${r}`)}</Chip>)}</Chips>
             </div>
+            <p className="muted small">{t('devices.pickHint')}</p>
             <div className={cards.grid}>
               {library.map((d) => (
-                <article key={d.id} className={cx(cards.card, added.has(d.id) && cards.selected)}>
+                <button key={d.id} type="button" className={cx(cards.card, styles.pick, added.has(d.id) && styles.picked)} aria-pressed={added.has(d.id)}
+                  onClick={() => { pointAt(entries.filter((e) => e.deviceId === d.id).map((e) => e.uid)); toggleDevice(d.id).catch(fail) }}>
                   <DeviceThumb device={d} />
                   <span className="eyebrow">{t(`role.${d.role}`)}</span>
                   <span className={cards.title}>{d.name}</span>
-                  <Button className={cards.wide} onClick={() => addDevice(d.id).catch(fail)}>{t(added.has(d.id) ? 'devices.addAgain' : 'devices.add')}</Button>
-                </article>
+                </button>
               ))}
             </div>
             <p className="muted small">{t('devices.libraryMissing')}</p>

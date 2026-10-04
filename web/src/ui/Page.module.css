@@ -2,6 +2,10 @@
 .narrow { max-width: 1120px; }
 .lead { margin: 0; max-width: 760px; font-size: 18px; color: var(--ink-2); }
 
+@media (min-width: 961px) {
+  .fill { flex: 1 1 auto; min-height: 0; padding-bottom: 0; }
+}
+
 @media (max-width: 720px) {
   .page { padding-left: 16px; padding-right: 16px; }
 }

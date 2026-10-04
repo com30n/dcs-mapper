@@ -72,5 +72,5 @@ export default defineConfig({
   base: './',
   plugins: [react(), siteData()],
   build: { rolldownOptions: { input: { main: resolve(import.meta.dirname, 'index.html'), editor: resolve(import.meta.dirname, 'editor/index.html') } } },
-  test: { environment: 'node' },
+  test: { environment: 'node', unstubGlobals: true },
 })

@@ -31,8 +31,6 @@
   "devices.filter.stick": "Sticks",
   "devices.filter.throttle": "Throttles",
   "devices.filter.pedals": "Pedals",
-  "devices.add": "Add to setup",
-  "devices.addAgain": "Add another",
   "devices.libraryMissing": "Your device is not here yet? Devices are added to the library one by one.",
   "devices.yours": "Your setup",
   "devices.emptySetup": "Add a device from the library.",
@@ -363,5 +361,6 @@
   "map.drawerButton": "Press a button or click its number to give it to {name}",
   "map.needsAxis": "{command} needs an axis — {input} is a button",
   "map.needsButton": "{command} needs a button — {input} is an axis",
-  "map.theAxis": "the axis you move"
+  "map.theAxis": "the axis you move",
+  "devices.pickHint": "Click a device to add it to your setup, and click it again to take it out. If your setup has it more than once, take out the one you don't need with ×."
 }

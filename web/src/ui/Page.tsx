@@ -7,11 +7,12 @@ interface PageProps {
   title: string
   lead?: string
   narrow?: boolean
+  fill?: boolean
   children: ReactNode
 }
 
-export const Page = ({ eyebrow, title, lead, narrow, children }: PageProps) => (
-  <main className={cx(styles.page, narrow && styles.narrow)}>
+export const Page = ({ eyebrow, title, lead, narrow, fill, children }: PageProps) => (
+  <main className={cx(styles.page, narrow && styles.narrow, fill && styles.fill)}>
     <p className="eyebrow">{eyebrow}</p>
     <h1>{title}</h1>
     {lead && <p className={styles.lead}>{lead}</p>}

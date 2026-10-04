@@ -19,7 +19,7 @@ const device: Device = { id: 'MOZA/AB9 + MH16', name: 'AB9', role: 'stick', dcsN
 
 export function entry(change: Partial<Entry> = {}): Entry {
   return {
-    uid: 'stick', deviceId: device.id, generic: null, dcsId: STICK, start: 'empty', fileText: null, fileName: null, ready: null,
+    uid: 'stick', deviceId: device.id, generic: null, dcsId: STICK, start: 'empty', startChosen: false, fileText: null, fileName: null, ready: null,
     wanted: { key: {}, axis: {} }, extra: {}, dead: [], padId: null, padIndex: null, uiWanted: { key: {}, axis: {} }, uiExtra: {}, uiChanged: false,
     ...change,
   }

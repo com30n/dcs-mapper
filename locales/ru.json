@@ -31,8 +31,6 @@
   "devices.filter.stick": "РУС",
   "devices.filter.throttle": "РУД",
   "devices.filter.pedals": "Педали",
-  "devices.add": "Добавить",
-  "devices.addAgain": "Добавить ещё",
   "devices.libraryMissing": "Вашего устройства пока нет? Устройства добавляются в библиотеку по одному.",
   "devices.yours": "Ваш набор",
   "devices.emptySetup": "Добавьте устройство из библиотеки.",
@@ -363,5 +361,6 @@
   "map.drawerButton": "Нажмите кнопку или кликните её номер, чтобы отдать команде «{name}»",
   "map.needsAxis": "Команде «{command}» нужна ось, а {input} — кнопка",
   "map.needsButton": "Команде «{command}» нужна кнопка, а {input} — ось",
-  "map.theAxis": "ось, которую двинете"
+  "map.theAxis": "ось, которую двинете",
+  "devices.pickHint": "Нажмите на устройство, чтобы добавить его, и нажмите ещё раз, чтобы убрать. Если оно в наборе несколько раз, лишнее уберите крестиком ×."
 }
