@@ -9,7 +9,7 @@
 .mark.live { background: var(--ok); color: #fff; box-shadow: 0 0 0 4px rgba(31, 122, 58, 0.35); }
 .mark.wrong { opacity: 0.3; cursor: not-allowed; box-shadow: none; }
 
-.callouts { position: relative; width: 100%; }
+.callouts { position: relative; width: 100%; flex-shrink: 0; }
 .frame { position: absolute; top: 0; }
 .leaders { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
 .leader { stroke: #8994A3; stroke-width: 1; }

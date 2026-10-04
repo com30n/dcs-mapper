@@ -1,6 +1,6 @@
 import i18n from 'i18next'
 import { inputLabel, markLabel } from '../../dcs/combos'
-import { frameLayout, MARK_SCALE } from '../../data/frame'
+import { allViews, frameLayout, MARK_SCALE } from '../../data/frame'
 import { pictureUrl } from '../../data/load'
 import { tr } from '../../i18n/i18n'
 import { setupOf, type SessionState } from '../../state/session'
@@ -66,7 +66,7 @@ function pill(ctx: CanvasRenderingContext2D, text: string, x: number, y: number,
 export async function drawSheet(s: SessionState, entry: Entry): Promise<Blob> {
   await Promise.all(['700 72px Barlow', '600 16px Barlow', '500 16px Barlow', '500 14px "IBM Plex Mono"'].map((font) => document.fonts.load(font)))
   const device = s.devices[entry.deviceId]
-  const view = device.views[0]
+  const view = allViews(device)
   const canvas = Object.assign(document.createElement('canvas'), { width: W, height: H })
   const ctx = canvas.getContext('2d')!
   ctx.fillStyle = '#FFFFFF'

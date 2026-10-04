@@ -32,3 +32,21 @@ export function frameLayout(device: Pick<Device, 'pictures'>, frame: Frame) {
   }))).filter((m) => m.x >= 0 && m.x <= 100 && m.y >= 0 && m.y <= 100)
   return { width, height, placed, marks }
 }
+
+const VIEW_GAP = 0.06
+
+export function allViews(device: Pick<Device, 'pictures' | 'views'>): Frame {
+  if (device.views.length === 1) return device.views[0]
+  const layouts = device.views.map((view) => frameLayout(device, view))
+  const height = Math.max(...layouts.map((l) => l.height))
+  const widths = layouts.map((l) => l.width * height / l.height)
+  const gap = height * VIEW_GAP
+  const width = widths.reduce((sum, w) => sum + w, 0) + gap * (widths.length - 1)
+  let left = 0
+  const layers = layouts.flatMap((l, i) => {
+    const offset = left
+    left += widths[i] + gap
+    return l.placed.map((p) => ({ picture: p.picture, ...p.c, at: [(offset + p.ax / 100 * widths[i]) / width * 100, p.ay, p.aw / 100 * widths[i] / width * 100] as [number, number, number] }))
+  })
+  return { size: [width, height], layers }
+}
