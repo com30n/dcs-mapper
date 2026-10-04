@@ -134,6 +134,10 @@ def screen_commands(raw, joystick_device):
                 if command['hash'] not in merged:
                     merged[command['hash']] = command if command['hash'] in bindable else {**command, 'joystick': False}
         result[kind] = list(merged.values())
+    assignments = raw.get('assignments') or {}
+    for command in result['axis']:
+        if command['hash'] in assignments:
+            command['assignment'] = assignments[command['hash']]
     return result
 
 def defaults_of(device):

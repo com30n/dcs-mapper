@@ -99,6 +99,36 @@ def test_qml_parser_keeps_inline_elements_and_evaluates_ternaries():
     assert moza.visible(keys, {'mode': 1}) is True
     assert moza.visible(keys, {'mode': 0}) is False
 
+def site_axis_roles():
+    site = (REPO / 'web' / 'src' / 'state' / 'devices.ts').read_text(encoding='utf-8')
+    return set(re.findall(r'(\w+):', re.search(r'AXIS_ROLES\b[^=]*=\s*\{([^}]*)\}', site).group(1)))
+
+def test_site_tells_devices_apart_by_every_axis_the_dcs_wizard_asks_for():
+    root = dcs_root()
+    if not root:
+        return 'skipped: no DCS install'
+    page = (root / 'Scripts' / 'Input' / 'WizardAxisPage.lua').read_text(errors='ignore')
+    asked = set(re.findall(r"name = '(\w+)'.*isAxis = true", page))
+    assert asked == {'pitch', 'roll', 'rudder', 'thrust'}, asked
+    assert asked <= site_axis_roles()
+
+def test_site_axis_roles_are_names_dcs_assigns():
+    root = dcs_root()
+    if not root:
+        return 'skipped: no DCS install'
+    table = (root / 'Scripts' / 'Input' / 'DefaultAssignments.lua').read_text(errors='ignore')
+    assert site_axis_roles() <= set(re.findall(r'^\s+(\w+)\s*=', table, re.M))
+
+def test_axis_assignments_are_what_the_huey_declares():
+    root = dcs_root()
+    if not root:
+        return 'skipped: no DCS install'
+    lua = (root / 'Mods' / 'aircraft' / 'Uh-1H' / 'Input' / 'UH-1H' / 'joystick' / 'default.lua').read_text(errors='ignore')
+    declared = {name: assignment for assignment, name in re.findall(r'defaultDeviceAssignmentFor\("(\w+)"\)\s*,\s*action\s*=\s*\w+\s*,\s*name\s*=\s*_\(\'([^\']+)\'\)', lua)}
+    assert len(declared) >= 4, declared
+    extracted = {c['name']: c['assignment'] for c in catalogue('UH-1H')['commands']['axis'] if 'assignment' in c}
+    assert extracted == declared, (extracted, declared)
+
 if __name__ == '__main__':
     failed = 0
     for name, test in list(globals().items()):

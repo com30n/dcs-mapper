@@ -45,6 +45,7 @@ export interface Command {
   name: string
   category: string[]
   joystick?: false
+  assignment?: string
 }
 
 export type Bindings = Record<Kind, Record<string, Combo[]>>

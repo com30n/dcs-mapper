@@ -39,14 +39,17 @@ export async function installedDiff(name: string): Promise<DeviceDiff> {
   return text ? (parseLua(text) as DeviceDiff) : {}
 }
 
+const AXIS_ROLES: Record<string, string> = {
+  pitch: 'stick', roll: 'stick',
+  thrust: 'throttle', thrust_left: 'throttle', thrust_right: 'throttle',
+  rudder: 'pedals', left_wheel_brake: 'pedals', right_wheel_brake: 'pedals', wheel_brake: 'pedals',
+}
+
 export function roleOf(diff: DeviceDiff, name: string) {
   const profile = profileFor(get().catalog!, templateOf(name))
-  const names = Object.fromEntries(profile.commands.axis.map((c) => [c.hash, c.name]))
-  const bound = Object.keys(currentFrom(profile, diff).axis).map((hash) => names[hash] ?? '')
-  if (bound.some((n) => /^(roll|pitch)$/i.test(n))) return 'stick'
-  if (bound.some((n) => /thrust|throttle/i.test(n))) return 'throttle'
-  if (bound.some((n) => /rudder|brake/i.test(n))) return 'pedals'
-  return null
+  const bound = currentFrom(profile, diff).axis
+  const roles = new Set(profile.commands.axis.filter((c) => bound[c.hash]?.length).map((c) => AXIS_ROLES[c.assignment ?? '']))
+  return ['stick', 'throttle', 'pedals'].find((role) => roles.has(role)) ?? null
 }
 
 export const configRole = (name: string) => installedDiff(name).then((diff) => roleOf(diff, name)).catch(() => null)

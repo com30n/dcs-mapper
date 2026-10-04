@@ -151,6 +151,9 @@ local function templateOf(deviceName)
 	return (deviceName:gsub('(.*)(%s{.*})', '%1'))
 end
 
+local ASSIGNED = '@'
+local PROBE = {default = setmetatable({}, {__index = function(_, name) return ASSIGNED .. name end})}
+
 local function loadDeviceProfile(filename, deviceName, actions, defaultAssignments)
 	local template = templateOf(deviceName)
 	local load
@@ -180,6 +183,9 @@ local function loadDeviceProfile(filename, deviceName, actions, defaultAssignmen
 			local common = env.defaultDeviceAssignmentFor('thrust')
 			local left = env.defaultDeviceAssignmentFor('thrust_left')
 			local right = env.defaultDeviceAssignmentFor('thrust_right')
+			if defaultAssignments == PROBE then
+				return common, left, right
+			end
 			if not common or (left and left[1].key and right and right[1].key) then
 				return nil, left, right
 			end
@@ -252,6 +258,12 @@ local function catalog(actionsFile, inputFolder, templates)
 	local out = {name = type(name) == 'string' and name or nil, devices = object({}), presets = object({})}
 	local keys, axes, ff = profileFor(inputFolder, 'Generic Device' .. GUID, actions, defaultAssignments)
 	out.devices[''] = object({key = commandList(keys, keyHash), axis = commandList(axes, axisHash), forceFeedback = ff})
+	out.assignments = object({})
+	local _, probed = profileFor(inputFolder, 'Generic Device' .. GUID, actions, PROBE)
+	for _, c in ipairs(probed) do
+		local key = c.combos and c.combos[1] and c.combos[1].key
+		if type(key) == 'string' and key:sub(1, #ASSIGNED) == ASSIGNED then out.assignments[axisHash(c)] = key:sub(#ASSIGNED + 1) end
+	end
 	local ownMouse = io.open(inputFolder .. '/mouse/default.lua')
 	if ownMouse then ownMouse:close() end
 	local otherFiles = {
