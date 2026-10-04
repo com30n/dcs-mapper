@@ -18,22 +18,42 @@ function fits(device: Device | null, used: string[]): device is Device {
   return !!device && used.every((key) => inputs.has(key))
 }
 
-async function fittingDevice(name: string, diff: DeviceDiff) {
-  const used = usedIn(diff)
-  const fitting = (await Promise.all(candidatesFor(get(), name).map((d) => loadDevice(d.id).catch(() => null)))).filter((d) => fits(d, used))
+async function usedFor(name: string, diff: DeviceDiff) {
+  const { folder, scan } = get()
+  const paths = Object.entries(scan.bindings).flatMap(([aircraft, names]) => names.filter((n) => sameId(n, name)).map((n) => `${aircraft}/joystick/${n}.diff.lua`))
+  const texts = folder ? await Promise.all(paths.map((path) => folder.read(path))) : []
+  const diffs = texts.flatMap((text) => { try { return text ? [parseLua(text) as DeviceDiff] : [] } catch { return [] } })
+  return [diff, ...diffs].flatMap(usedIn)
+}
+
+const entryDevice = (entry: Entry) =>
+  entry.generic ? Promise.resolve(genericDevice(entry.generic)) : loadDevice(entry.deviceId).catch(() => genericDevice(templateOf(entry.dcsId)))
+
+const allEntries = (s: SessionState) => Object.values(s.byAircraft).flatMap((a) => a.entries)
+
+const sameDevice = (a: string, b: string) => a.includes('{') && sameId(a, b)
+
+async function knownDevice(name: string, diff: DeviceDiff = {}) {
+  const chosen = allEntries(get()).find((e) => e.pictureChosen && sameDevice(e.dcsId, name))
+  if (chosen) return entryDevice(chosen)
+  const candidates = candidatesFor(get(), name)
+  if (!candidates.length) return null
+  const used = await usedFor(name, diff)
+  const fitting = (await Promise.all(candidates.map((d) => loadDevice(d.id).catch(() => null)))).filter((d) => fits(d, used))
   return fitting.length === 1 ? fitting[0] : null
 }
 
-export async function deviceFor(name: string, diff: DeviceDiff): Promise<Device> {
-  const device = (await fittingDevice(name, diff)) ?? genericDevice(templateOf(name))
+export async function deviceFor(name: string, diff: DeviceDiff = {}): Promise<Device> {
+  const device = (await knownDevice(name, diff)) ?? genericDevice(templateOf(name))
   useSession.setState((s) => { s.devices[device.id] = device })
   return device
 }
 
 export function newEntry(s: SessionState, device: Device, dcsId: string, start: Start, file?: { name: string; text: string }): Entry {
-  const linked = Object.values(s.byAircraft).flatMap((a) => a.entries).find((e) => e.padId && sameId(e.dcsId, dcsId))
+  const linked = allEntries(s).find((e) => e.padId && sameId(e.dcsId, dcsId))
+  const chosen = allEntries(s).find((e) => e.pictureChosen && sameDevice(e.dcsId, dcsId))
   return {
-    uid: crypto.randomUUID(), deviceId: device.id, generic: device.generic ? device.dcsName : null, dcsId, start, startChosen: false,
+    uid: crypto.randomUUID(), deviceId: device.id, generic: device.generic ? device.dcsName : null, dcsId, start, startChosen: false, pictureChosen: chosen?.deviceId === device.id,
     fileText: file?.text ?? null, fileName: file?.name ?? null, ready: null, wanted: null, extra: {}, dead: [],
     padId: linked?.padId ?? null, padIndex: linked?.padIndex ?? null, uiWanted: null, uiExtra: {}, uiChanged: false,
   }
@@ -53,12 +73,10 @@ export async function installedDiff(name: string): Promise<DeviceDiff> {
 const blank = (entry: Entry) => entry.start !== 'file' && !entry.startChosen && (!entry.wanted ||
   (entry.start === 'empty' && ![entry.wanted.key, entry.wanted.axis, entry.extra].some((table) => Object.keys(table).length)))
 
-const configDiff = (name: string) => installedDiff(name).catch((): DeviceDiff => ({}))
-
 export async function bestId(device: Device) {
   const s = get()
   const free = matchingIds(s, device).filter((id) => !setupOf(s).entries.some((e) => sameId(e.dcsId, id)))
-  const told = await Promise.all(free.map(async (id) => (await fittingDevice(id, await configDiff(id)))?.id))
+  const told = await Promise.all(free.map(async (id) => (await knownDevice(id))?.id))
   const mine = free.filter((_, i) => told[i] === device.id)
   const open = free.filter((_, i) => !told[i] || told[i] === device.id)
   return mine.length === 1 ? mine[0] : open.length === 1 ? open[0] : ''
@@ -73,6 +91,7 @@ export async function addDevice(id: string) {
   const entry = newEntry(s, device, await bestId(device), 'empty')
   entry.start = configFile(s, entry.dcsId) ? 'current' : presetFor({ ...s, devices: { ...s.devices, [id]: device } }, entry) ? 'preset' : 'empty'
   pushEntry(entry)
+  choose(entry.uid, entry.dcsId, device)
 }
 
 const adding = new Set<string>()
@@ -114,7 +133,7 @@ export async function loadFromFolder() {
     const now = get()
     const id = canonicalId(now, name)
     if (isOff(now, id) || setupOf(now).entries.some((e) => sameId(e.dcsId, id))) continue
-    const device = await deviceFor(id, await configDiff(id))
+    const device = await deviceFor(id)
     pushEntry(newEntry(get(), device, id, 'current'))
     added++
   }
@@ -131,7 +150,14 @@ export const removeDevice = (uid: string) => useSession.setState((s) => {
 })
 
 export const setStart = (uid: string, start: Start) => updateEntry(uid, (e) => { e.start = start; e.startChosen = true })
-export const setDcsId = (uid: string, dcsId: string) => updateEntry(uid, (e) => { e.dcsId = dcsId.trim() })
+export function setDcsId(uid: string, dcsId: string) {
+  updateEntry(uid, (e) => { e.dcsId = dcsId.trim() })
+  const entry = setupOf(get()).entries.find((e) => e.uid === uid)
+  const device = entry && get().devices[entry.deviceId]
+  if (!entry?.pictureChosen || !device) return
+  if (sameId(templateOf(entry.dcsId), device.dcsName)) choose(uid, entry.dcsId, device)
+  else if (entry.dcsId) updateEntry(uid, (e) => { e.pictureChosen = false })
+}
 export const setPresetFile = async (uid: string, file: File) => {
   const text = await file.text()
   updateEntry(uid, (e) => { e.fileText = text; e.fileName = file.name; e.start = 'file' })
@@ -142,12 +168,18 @@ export async function changePicture(uid: string, deviceId: string) {
   const s = get()
   const entry = setupOf(s).entries.find((e) => e.uid === uid)!
   const device = deviceId ? await loadDevice(deviceId) : genericDevice(templateOf(entry.dcsId || s.devices[entry.deviceId]?.dcsName || ''))
-  useSession.setState((d) => { d.devices[device.id] = device })
-  updateEntry(uid, (e) => {
-    e.deviceId = device.id
-    e.generic = device.generic ? device.dcsName : null
-    e.ready = null
-    if (e.start === 'preset' && !presetFor(get(), { ...e, deviceId: device.id })) e.start = 'empty'
+  choose(uid, entry.dcsId, device)
+}
+
+function choose(uid: string, dcsId: string, device: Device) {
+  useSession.setState((d) => {
+    d.devices[device.id] = device
+    for (const e of allEntries(d).filter((e) => e.uid === uid || sameDevice(e.dcsId, dcsId))) {
+      Object.assign(e, { deviceId: device.id, generic: device.generic ? device.dcsName : null, pictureChosen: true })
+      if (e.uid !== uid) continue
+      e.ready = null
+      if (e.start === 'preset' && !presetFor(d, e)) e.start = 'empty'
+    }
   })
 }
 
@@ -165,15 +197,15 @@ export async function turnOn(name: string) {
   useSession.setState((s) => { s.off = s.off.filter((d) => !sameId(d, name)) })
   const s = get()
   if (!name.includes('{') || setupOf(s).entries.some((e) => sameId(e.dcsId, name))) return
-  const device = await deviceFor(name, await configDiff(name))
+  const device = await deviceFor(name)
   pushEntry(newEntry(get(), device, name, configFile(get(), name) ? 'current' : 'empty'))
 }
 
 export async function ensureDevices() {
   const s = get()
-  const missing = Object.values(s.byAircraft).flatMap((a) => a.entries).filter((e) => !s.devices[e.deviceId])
+  const missing = allEntries(s).filter((e) => !s.devices[e.deviceId])
   for (const entry of missing) {
-    const device = entry.generic ? genericDevice(entry.generic) : await loadDevice(entry.deviceId).catch(() => genericDevice(templateOf(entry.dcsId)))
+    const device = await entryDevice(entry)
     useSession.setState((d) => { d.devices[entry.deviceId] = { ...device, id: entry.deviceId } })
   }
 }

@@ -5,7 +5,8 @@ import type { Entry } from './types'
 import { EMPTY_SCAN } from '../folder/scan'
 import { luaFile } from '../dcs/lua'
 import { genericDevice } from '../data/load'
-import { addFiles, bestId, loadFromFolder, setStart, toggleDevice } from './devices'
+import { addFiles, bestId, changePicture, loadFromFolder, setDcsId, setStart, toggleDevice } from './devices'
+import { undecided } from './lookup'
 import { catalog, entry, session, STICK } from './session.fixture'
 import { setupOf, useSession } from './session'
 
@@ -71,6 +72,120 @@ describe('which DCS id a device from the library gets', () => {
   it('leaves the id to the user when the files do not tell', async () => {
     expect(await idFor({ [stick]: {}, [throttle]: on('key', 'added', 'JOY_BTN5') })).toBe('')
     expect(await idFor({ [throttle]: on('key', 'added', 'JOY_BTN30') })).toBe('')
+  })
+})
+
+describe('one DCS id is one device in every aircraft', () => {
+  const id = `${MOZA} {base}`
+  const other = 'UH-1H'
+
+  function open(files: Record<string, object>, elsewhere: Entry[] = [], nameIn: Record<string, string> = {}) {
+    serveRepo()
+    const read = async (path: string) => {
+      const aircraft = Object.keys(files).find((a) => path === `${a}/joystick/${nameIn[a] ?? id}.diff.lua`)
+      return aircraft ? luaFile('diff', files[aircraft]) : null
+    }
+    const folder = { name: 'DCS', list: async () => [], read, log: async () => null }
+    const base = session([], undefined, { library, folder, scan: { ...EMPTY_SCAN, devices: [id], bindings: Object.fromEntries(Object.keys(files).map((a) => [a, [nameIn[a] ?? id]])) } })
+    useSession.setState({ ...base, byAircraft: { ...base.byAircraft, [other]: { ...base.byAircraft[catalog.id], entries: elsewhere } } })
+    return loadFromFolder().then(() => setupOf(useSession.getState()).entries[0])
+  }
+
+  it('reads the files of every aircraft in the folder', async () => {
+    expect((await open({ [catalog.folder]: {}, [other]: on('key', 'added', 'JOY_BTN30') })).deviceId).toBe('MOZA/MTQ + TQF')
+    expect((await open({ [catalog.folder]: {}, [other]: on('key', 'added', 'JOY_BTN30') }, [], { [other]: `${MOZA} {BASE}` })).deviceId).toBe('MOZA/MTQ + TQF')
+  })
+
+  it('keeps the device the user chose for the id in another aircraft', async () => {
+    const loaded = await open({ [catalog.folder]: {} }, [entry({ uid: 'there', dcsId: id, deviceId: 'MOZA/MTQ + TQF', pictureChosen: true })])
+    expect(loaded.deviceId).toBe('MOZA/MTQ + TQF')
+    expect(loaded.pictureChosen).toBe(true)
+  })
+
+  it('keeps no picture when the user chose none in another aircraft', async () => {
+    const loaded = await open({ [catalog.folder]: on('key', 'added', 'JOY_BTN30') }, [entry({ uid: 'there', dcsId: id, deviceId: none, generic: MOZA, pictureChosen: true })])
+    expect([loaded.deviceId, undecided(useSession.getState(), loaded)]).toEqual([none, false])
+  })
+
+  it('keeps the work in other aircraft when the device is chosen here', async () => {
+    const work = { key: { [catalog.commands.key[0].hash]: [{ key: 'JOY_BTN1' }] }, axis: {} }
+    const loaded = await open({ [catalog.folder]: {} }, [entry({ uid: 'there', dcsId: id, deviceId: none, generic: MOZA, start: 'preset', ready: 'built', wanted: work })])
+    await changePicture(loaded.uid, 'MOZA/MTQ + TQF')
+    const there = useSession.getState().byAircraft[other].entries[0]
+    expect([there.deviceId, there.pictureChosen, there.start, there.ready, there.wanted]).toEqual(['MOZA/MTQ + TQF', true, 'preset', 'built', work])
+  })
+
+  it('takes a device added from the library as the choice in every aircraft', async () => {
+    await open({ [catalog.folder]: {} }, [entry({ uid: 'there', dcsId: id, deviceId: none, generic: MOZA })])
+    useSession.setState((s) => ({ byAircraft: { ...s.byAircraft, [catalog.id]: { ...s.byAircraft[catalog.id], entries: [] } } }))
+    await toggleDevice('MOZA/AB9 + MH16')
+    const s = useSession.getState()
+    expect(Object.values(s.byAircraft).flatMap((a) => a.entries).map((e) => [e.dcsId, e.deviceId, undecided(s, e)])).toEqual([[id, 'MOZA/AB9 + MH16', false], [id, 'MOZA/AB9 + MH16', false]])
+  })
+
+  it('rebuilds a preset start here when the chosen device has no preset', async () => {
+    const loaded = await open({ [catalog.folder]: {} })
+    useSession.setState((s) => { const e = s.byAircraft[catalog.id].entries[0]; return { byAircraft: { ...s.byAircraft, [catalog.id]: { ...s.byAircraft[catalog.id], entries: [{ ...e, start: 'preset', ready: 'built' }] } } } })
+    await changePicture(loaded.uid, 'MOZA/MTQ + TQF')
+    const here = setupOf(useSession.getState()).entries[0]
+    expect([here.start, here.ready]).toEqual(['empty', null])
+  })
+
+  it('takes a DCS id the user types for a picked device as the choice in every aircraft', async () => {
+    await open({ [catalog.folder]: {} }, [entry({ uid: 'there', dcsId: id, deviceId: 'MOZA/MTQ + TQF', pictureChosen: true })])
+    useSession.setState((s) => ({ byAircraft: { ...s.byAircraft, [catalog.id]: { ...s.byAircraft[catalog.id], entries: [entry({ uid: 'here', dcsId: '', pictureChosen: true })] } } }))
+    setDcsId('here', id)
+    expect(useSession.getState().byAircraft[other].entries[0].deviceId).toBe('MOZA/AB9 + MH16')
+  })
+
+  it('keeps the work of another copy of the id in this aircraft', async () => {
+    const work = { key: { [catalog.commands.key[0].hash]: [{ key: 'JOY_BTN1' }] }, axis: {} }
+    await open({ [catalog.folder]: {} })
+    const copies = [entry({ uid: 'edited', dcsId: id, deviceId: none, generic: MOZA, ready: 'built', wanted: work }), entry({ uid: 'picked', dcsId: id, deviceId: none, generic: MOZA })]
+    useSession.setState((s) => ({ byAircraft: { ...s.byAircraft, [catalog.id]: { ...s.byAircraft[catalog.id], entries: copies } } }))
+    await changePicture('picked', 'MOZA/MTQ + TQF')
+    const edited = setupOf(useSession.getState()).entries[0]
+    expect([edited.deviceId, edited.ready, edited.wanted]).toEqual(['MOZA/MTQ + TQF', 'built', work])
+  })
+
+  it('does not pass a picked device on to an id of another device', async () => {
+    const warthog = 'Throttle - HOTAS Warthog {lever}'
+    await open({ [catalog.folder]: {} }, [entry({ uid: 'there', dcsId: warthog, deviceId: 'Thrustmaster/HOTAS Warthog Throttle', pictureChosen: true })])
+    useSession.setState((s) => ({ byAircraft: { ...s.byAircraft, [catalog.id]: { ...s.byAircraft[catalog.id], entries: [entry({ uid: 'here', dcsId: '', pictureChosen: true })] } } }))
+    setDcsId('here', warthog)
+    expect(useSession.getState().byAircraft[other].entries[0].deviceId).toBe('Thrustmaster/HOTAS Warthog Throttle')
+    expect(setupOf(useSession.getState()).entries[0].pictureChosen).toBe(false)
+  })
+
+  it('tells devices apart only by a DCS id with its GUID', async () => {
+    await open({ [catalog.folder]: {} })
+    const picked = [entry({ uid: 'stick', dcsId: '', pictureChosen: true }), entry({ uid: 'throttle', dcsId: '', deviceId: 'MOZA/MTQ + TQF', pictureChosen: true })]
+    useSession.setState((s) => ({ devices: { ...s.devices, 'MOZA/MTQ + TQF': library[1] }, byAircraft: { ...s.byAircraft, [catalog.id]: { ...s.byAircraft[catalog.id], entries: picked } } }))
+    setDcsId('stick', MOZA)
+    setDcsId('throttle', MOZA)
+    expect(setupOf(useSession.getState()).entries.map((e) => e.deviceId)).toEqual(['MOZA/AB9 + MH16', 'MOZA/MTQ + TQF'])
+    setDcsId('stick', '')
+    await addFiles([new File([luaFile('diff', on('key', 'added', 'JOY_BTN_POV1_U'))], `${MOZA}.diff.lua`)])
+    expect(setupOf(useSession.getState()).entries[2].deviceId).toBe('MOZA/AB9 + MH16')
+  })
+
+  it('stops asking once the DCS name has no devices to choose from', () => {
+    const unknown = entry({ dcsId: 'Handbrake PRO {brake}', deviceId: none, generic: MOZA })
+    expect(undecided(session([unknown], undefined, { library }), unknown)).toBe(false)
+  })
+
+  it('asks which device it is until the user chooses, then uses the choice everywhere', async () => {
+    const loaded = await open({ [catalog.folder]: {} }, [entry({ uid: 'there', dcsId: id, deviceId: none, generic: MOZA })])
+    expect(undecided(useSession.getState(), loaded)).toBe(true)
+    await changePicture(loaded.uid, 'MOZA/MTQ + TQF')
+    const s = useSession.getState()
+    expect(Object.values(s.byAircraft).flatMap((a) => a.entries).map((e) => [e.deviceId, undecided(s, e)])).toEqual([['MOZA/MTQ + TQF', false], ['MOZA/MTQ + TQF', false]])
+  })
+
+  it('takes no picture as a choice too', async () => {
+    const loaded = await open({ [catalog.folder]: {} })
+    await changePicture(loaded.uid, '')
+    expect(undecided(useSession.getState(), setupOf(useSession.getState()).entries[0])).toBe(false)
   })
 })
 

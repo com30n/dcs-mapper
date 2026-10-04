@@ -31,6 +31,8 @@ export const matchingIds = (s: SessionState, device: Pick<Device, 'dcsName'>) =>
 
 export const candidatesFor = (s: SessionState, name: string) => s.library.filter((d) => sameId(d.dcsName, templateOf(name)))
 
+export const undecided = (s: SessionState, entry: Entry) => !entry.pictureChosen && !!entry.generic && candidatesFor(s, entryTemplate(s, entry)).length > 0
+
 export const deviceLabel = (s: SessionState, id: string) =>
   s.devices[setupOf(s).entries.find((e) => sameId(e.dcsId, id))?.deviceId ?? '']?.name ?? templateOf(id)
 

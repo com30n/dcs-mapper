@@ -9,6 +9,7 @@ export interface Entry {
   dcsId: string
   start: Start
   startChosen: boolean
+  pictureChosen: boolean
   fileText: string | null
   fileName: string | null
   ready: string | null
