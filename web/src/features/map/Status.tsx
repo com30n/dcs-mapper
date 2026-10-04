@@ -54,19 +54,17 @@ export function StatusCard({ s, entry }: { s: SessionState; entry: Entry }) {
         <span className="eyebrow">{t(axis ? 'map.waitingAxis' : 'map.waitingButton')}</span>
         <strong>{listening.name}</strong>
         <span className={styles.listenText}>{t(axis ? 'map.moveAxisNow' : 'map.pressButtonNow')}</span>
-        {!axis && (
-          <div className={styles.pickMods}>
-            <span>{t('map.modsForBinding')}</span>
-            <Chips>
-              {modifierNames(modifiers).map((name) => (
-                <Chip key={name} look="onDark" pressed={adding.includes(name)} onClick={() => toggleAdding(name)}
-                  title={modifiers[name].device === 'Keyboard' ? t('mods.keyboard') : `${deviceLabel(s, modifiers[name].device)} · ${inputLabel(modifiers[name].key)}`}>{name}</Chip>
-              ))}
-              <Chip look="dashed" onClick={() => openMods({ adding: 'modifier' })}>{t('map.newModifier')}</Chip>
-            </Chips>
-            <span className="mono">{t('map.willBe', { combo: [...adding, t('map.theButton')].join(' + ') })}</span>
-          </div>
-        )}
+        <div className={styles.pickMods}>
+          <span>{t('map.modsForBinding')}</span>
+          <Chips>
+            {modifierNames(modifiers).map((name) => (
+              <Chip key={name} look="onDark" pressed={adding.includes(name)} onClick={() => toggleAdding(name)}
+                title={modifiers[name].device === 'Keyboard' ? t('mods.keyboard') : `${deviceLabel(s, modifiers[name].device)} · ${inputLabel(modifiers[name].key)}`}>{name}</Chip>
+            ))}
+            <Chip look="dashed" onClick={() => openMods({ adding: 'modifier' })}>{t('map.newModifier')}</Chip>
+          </Chips>
+          <span className="mono">{t('map.willBe', { combo: [...adding, t(axis ? 'map.theAxis' : 'map.theButton')].join(' + ') })}</span>
+        </div>
         {here && (
           <div className={cx(styles.pickMods, styles.axisChoice)}>
             <Chips>

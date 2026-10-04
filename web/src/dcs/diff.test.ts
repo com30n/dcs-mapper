@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { comboId } from './combos'
-import { buildDiff, currentFrom, profileFor } from './diff'
+import { buildDiff, commandDiff, currentFrom, profileFor } from './diff'
 import { luaFile } from './lua'
 import { KINDS, type Bindings, type Catalog } from './types'
 
@@ -10,6 +10,8 @@ const repo = resolve(import.meta.dirname, '..', '..', '..')
 const read = <T>(path: string): T => JSON.parse(readFileSync(resolve(repo, path), 'utf-8')) as T
 const catalog = read<Catalog>('aircraft/F-16C_50/aircraft.json')
 const applied = read<Record<string, { current: Bindings; updated: Record<string, string[]> }>>('test/fixtures/applied-F-16C_50.json')
+
+const asDcsWrites = <T extends object>(filter: T) => ({ hardwareDetent: false, hardwareDetentAB: 0, hardwareDetentMax: 0, ...filter })
 
 const normalized = (bindings: Bindings) => Object.fromEntries(KINDS.map((kind) => [kind,
   Object.fromEntries(Object.entries(bindings[kind]).map(([hash, combos]) => [hash, combos.map(comboId).sort()]))]))
@@ -36,8 +38,19 @@ describe('writing a diff', () => {
     const half = { curvature: [0], deadzone: 0, invert: false, saturationX: 1, saturationY: 0.5, slider: true }
     const pedals = [{ key: 'JOY_SLIDER1', filter: half }, { key: 'JOY_Y', filter: { ...half, invert: true } }]
     const diff = buildDiff(profile, { key: profile.defaults.key, axis: { ...profile.defaults.axis, [command.hash]: pedals } })
-    expect(diff.axisDiffs?.[command.hash]?.added).toEqual(pedals)
-    expect(currentFrom(profile, diff).axis[command.hash]).toEqual(pedals)
+    const written = pedals.map((c) => ({ ...c, filter: asDcsWrites(c.filter) }))
+    expect(diff.axisDiffs?.[command.hash]?.added).toEqual(written)
+    expect(currentFrom(profile, diff).axis[command.hash]).toEqual(written)
+  })
+
+  it('writes every filter field DCS writes, also for an axis tuned on the site', () => {
+    const tuned = { deadzone: 0, saturationX: 1, saturationY: 1, curvature: [0.1], slider: false, invert: false }
+    expect(commandDiff('Pitch', [{ key: 'JOY_Y' }], [{ key: 'JOY_Y', filter: tuned }], true)?.changed).toEqual([{ key: 'JOY_Y', filter: asDcsWrites(tuned) }])
+  })
+
+  it('does not call a filter changed when it only lacks the fields DCS fills in', () => {
+    const preset = { deadzone: 0, saturationX: 1, saturationY: 1, curvature: [0.1], slider: false, invert: false }
+    expect(commandDiff('Pitch', [{ key: 'JOY_Y', filter: preset }], [{ key: 'JOY_Y', filter: asDcsWrites(preset) }], true)).toBeNull()
   })
 
   it('writes each command under the name it is given, as DCS writes the game language', () => {

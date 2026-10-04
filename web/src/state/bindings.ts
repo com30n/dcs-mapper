@@ -56,7 +56,7 @@ export function assign(input: string) {
   if (isAxisKey(input) !== axis) return
   const own = modifierOn(s, entry, input)
   if (own && !axis) return toggleAdding(own)
-  const reformers = axis ? [] : [...new Set([...adding, ...heldModifiers(s, entry)])]
+  const reformers = [...new Set([...adding, ...heldModifiers(s, entry)])]
   const combo: Combo = reformers.length ? { key: input, reformers } : { key: input }
   const commands = entryProfile(s, entry).commands[listening.kind]
   const stays = (c: Combo) => (addAxis ? !sameCombo(c, combo) : layerOf(c) !== layerOf(combo))

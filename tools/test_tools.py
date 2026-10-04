@@ -67,6 +67,22 @@ def test_mh16_picture_shows_moza_numbering():
     trigger = next(m for m in drawn if m['input'] == 'JOY_BTN1')
     assert (trigger['x'], trigger['y']) == (14.99, 50.17)
 
+def test_site_default_axis_filter_has_the_fields_dcs_writes():
+    root = dcs_root()
+    if not root:
+        return 'skipped: no DCS install'
+    data = (root / 'Scripts' / 'Input' / 'Data.lua').read_text(errors='ignore')
+    body = re.search(r'createAxisFilter\s*=\s*function.*?return result', data, re.S).group(0)
+    dcs = set(re.findall(r'result\.(\w+)\s*=', body))
+    site = (REPO / 'web' / 'src' / 'dcs' / 'axis.ts').read_text(encoding='utf-8')
+    default = re.search(r'DEFAULT_FILTER\b[^=]*=\s*\{([^}]*)\}', site).group(1)
+    assert set(re.findall(r'(\w+):', default)) == dcs, sorted(dcs)
+
+def test_translations_keep_the_text_dcs_writes_verbatim():
+    catalogs = [{'Autopilot override': 'Автопилот, временное отключение ', 'Blank': ' '}]
+    assert aircraft.translate(catalogs, 'Autopilot override') == 'Автопилот, временное отключение '
+    assert aircraft.translate(catalogs, 'Blank') == 'Blank'
+
 def test_qml_parser_keeps_inline_elements_and_evaluates_ternaries():
     tree = moza.parse_qml('''Item {
         delegate: Item {

@@ -1,6 +1,8 @@
 import type { AxisFilter } from './types'
 
-export const DEFAULT_FILTER: AxisFilter = { deadzone: 0, saturationX: 1, saturationY: 1, curvature: [0], slider: false, invert: false }
+export const DEFAULT_FILTER: AxisFilter = {
+  deadzone: 0, saturationX: 1, saturationY: 1, hardwareDetentMax: 0, hardwareDetentAB: 0, hardwareDetent: false, slider: false, invert: false, curvature: [0],
+}
 export const USER_CURVE_POINTS = 11
 
 export const filterWithDefaults = (filter?: Partial<AxisFilter> | null): AxisFilter => ({

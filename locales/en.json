@@ -362,5 +362,6 @@
   "map.drawerAxis": "Move an axis or click it to give it to {name}",
   "map.drawerButton": "Press a button or click its number to give it to {name}",
   "map.needsAxis": "{command} needs an axis — {input} is a button",
-  "map.needsButton": "{command} needs a button — {input} is an axis"
+  "map.needsButton": "{command} needs a button — {input} is an axis",
+  "map.theAxis": "the axis you move"
 }

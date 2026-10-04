@@ -1,3 +1,4 @@
+import { filterWithDefaults } from './axis'
 import type { Combo, Modifiers } from './types'
 
 export const AXES = ['JOY_X', 'JOY_Y', 'JOY_Z', 'JOY_RX', 'JOY_RY', 'JOY_RZ', 'JOY_SLIDER1', 'JOY_SLIDER2']
@@ -10,12 +11,12 @@ export const sameId = (a?: string | null, b?: string | null) => !!a && !!b && a.
 
 export const comboId = (c: Combo) => `${c.key}|${[...(c.reformers ?? [])].sort().join('+')}`
 export const sameCombo = (a: Combo, b: Combo) => comboId(a) === comboId(b)
-export const filterKey = (c: Combo) => JSON.stringify(c.filter ?? {})
+export const filterKey = (c: Combo) => JSON.stringify(filterWithDefaults(c.filter))
 
 export function cleanCombo(c: Combo, withFilter = true): Combo {
   const clean: Combo = { key: c.key }
   if (c.reformers?.length) clean.reformers = [...c.reformers]
-  if (withFilter && c.filter && Object.keys(c.filter).length) clean.filter = c.filter
+  if (withFilter && c.filter && Object.keys(c.filter).length) clean.filter = filterWithDefaults(c.filter)
   return clean
 }
 

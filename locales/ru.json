@@ -362,5 +362,6 @@
   "map.drawerAxis": "Двиньте ось или кликните её, чтобы отдать команде «{name}»",
   "map.drawerButton": "Нажмите кнопку или кликните её номер, чтобы отдать команде «{name}»",
   "map.needsAxis": "Команде «{command}» нужна ось, а {input} — кнопка",
-  "map.needsButton": "Команде «{command}» нужна кнопка, а {input} — ось"
+  "map.needsButton": "Команде «{command}» нужна кнопка, а {input} — ось",
+  "map.theAxis": "ось, которую двинете"
 }

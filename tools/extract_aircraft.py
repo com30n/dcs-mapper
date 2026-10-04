@@ -219,7 +219,7 @@ def translate(catalogs, text):
     for catalog in catalogs:
         value = catalog.get(text)
         if isinstance(value, str) and value.strip():
-            return value.strip()
+            return value
     return text
 
 def texts_of(catalogue):

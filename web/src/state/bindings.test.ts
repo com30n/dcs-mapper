@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { assign, saveTune, selectEntry } from './bindings'
 import { useMapUi } from './mapUi'
-import { catalog, entry, session } from './session.fixture'
+import { KEYBOARD_MODIFIERS } from '../dcs/combos'
+import { catalog, entry, session, STICK } from './session.fixture'
 import { useSession } from './session'
 
 const command = catalog.commands.axis[0]
@@ -62,5 +63,28 @@ describe('several axes on one command, as DCS allows', () => {
     moveAxisOnRudder('JOY_Y', true)
     saveTune(command.hash, [LEFT_HALF, RIGHT_HALF])
     expect(rudderCombos()).toEqual([{ key: 'JOY_SLIDER1', filter: LEFT_HALF }, { key: 'JOY_Y', filter: RIGHT_HALF }])
+  })
+})
+
+const slew = catalog.commands.axis[1]
+const withPinky = { ...KEYBOARD_MODIFIERS, Pinky: { device: STICK, key: 'JOY_BTN65', switch: false } }
+const axes = () => useSession.getState().byAircraft[catalog.id].entries[0].wanted!.axis
+
+function moveXForSlew(wanted = {}) {
+  useSession.setState(session([entry({ wanted: { key: {}, axis: wanted } })], withPinky))
+  useMapUi.setState({ listening: { hash: slew.hash, kind: 'axis', name: slew.name }, adding: ['Pinky'], addAxis: false })
+  assign('JOY_X')
+}
+
+describe('modifiers on axes, as DCS allows', () => {
+  it('binds the axis with the modifiers picked for it', () => {
+    moveXForSlew()
+    expect(axes()[slew.hash]).toEqual([{ key: 'JOY_X', reformers: ['Pinky'] }])
+  })
+
+  it('leaves the same axis without the modifier on its own command', () => {
+    moveXForSlew({ [command.hash]: [{ key: 'JOY_X' }] })
+    expect(axes()[command.hash]).toEqual([{ key: 'JOY_X' }])
+    expect(axes()[slew.hash]).toEqual([{ key: 'JOY_X', reformers: ['Pinky'] }])
   })
 })
