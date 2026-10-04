@@ -4,8 +4,10 @@ import { create } from 'zustand'
 import { dropDraft, readDrafts, writeDraft } from '../data/drafts'
 import { loadDevice, loadDeviceIndex, pictureUrl } from '../data/load'
 import type { Crop, Device, DeviceIndexEntry, Frame } from '../data/types'
+import { AXES } from '../dcs/combos'
+import { hasHat, type PadFrame } from '../gamepad/pads'
 import { download } from '../state/export'
-import { addPicture, cropOf, dcsNameOf, deviceId, deviceJson, emptyDevice, folderName, marksOf, nextOpen, placeMark, removeMark, sortInputs, withCrop } from './model'
+import { addPicture, cropOf, dcsNameOf, deviceId, deviceJson, emptyDevice, folderName, marksOf, nextOpen, padInputs, placeMark, removeMark, sortInputs, withCrop } from './model'
 
 export type Mode = 'buttons' | 'card' | 'views'
 
@@ -151,7 +153,7 @@ export function removeView() {
   set({ device: { ...s.device, views: s.device.views.filter((_, i) => i !== s.view) }, view: 0 })
 }
 
-const idOf = (s: EditorState) => (s.device!.id || deviceId(s.maker, s.device!.name))
+export const idOf = (s: EditorState) => (s.device!.id || deviceId(s.maker, s.device!.name))
 export const ready = (s: EditorState) => !!s.device?.name.trim() && Object.keys(s.device.pictures).length > 0
 
 async function bytesOf(s: EditorState, name: string) {
@@ -200,4 +202,17 @@ export async function discardDraft() {
   dropDraft(idOf(s))
   await loadLibrary()
   if (s.device?.id) await openDevice(s.device.id)
+}
+
+const restingAxes = new Map<number, number[]>()
+
+export function padFrame({ pads, states, fresh }: PadFrame) {
+  for (const pad of pads) {
+    const axes = states.get(pad.index)!.axes
+    const rest = restingAxes.get(pad.index) ?? axes
+    const moved = AXES.find((_, i) => axes[i] !== undefined && rest[i] !== undefined && Math.abs(axes[i] - rest[i]) > 0.5)
+    restingAxes.set(pad.index, moved ? axes : rest)
+    const pressed = fresh.get(pad.index)?.at(-1) ?? moved
+    if (pressed) reportPad(pad.id, padInputs(pad.buttons.length, hasHat(pad), Math.min(pad.axes.length, AXES.length)), pressed)
+  }
 }

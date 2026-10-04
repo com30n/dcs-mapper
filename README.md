@@ -36,6 +36,10 @@ because the button is also a modifier.
 
 ![The change in the stick's .diff.lua file](docs/screenshots/export.png)
 
+Your device is not in the library yet? Put its buttons on a picture in the
+[device editor](https://com30n.github.io/dcs-mapper/editor/) and send the folder it makes, see
+[CONTRIBUTING.md](CONTRIBUTING.md#add-a-device).
+
 Every device also gets a layout picture to print or keep on a second screen:
 
 ![The F-16C layout of the MOZA AB9 stick](docs/screenshots/layout.png)

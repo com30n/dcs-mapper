@@ -34,8 +34,14 @@ same tool from the repository instead: `python tools/extract_aircraft.py --only 
 
 ## Add a device
 
-Make a folder `devices/<maker>/<device>/`, for example `devices/VIRPIL/MongoosT-50CM3/`, with the
-pictures and one `device.json`:
+The easiest way is the [device editor](https://com30n.github.io/dcs-mapper/editor/): add a picture,
+press each button on your device and click where it is, frame the card and the views, then download
+the device folder as a `.zip` and drop it into `devices/<maker>/` on GitHub. **Try it in the mapper**
+shows the device on the site before you send it. To fix the numbers of a device that is already in
+the library, pick it in the editor instead of starting a new one.
+
+The folder can also be written by hand: `devices/<maker>/<device>/`, for example
+`devices/VIRPIL/MongoosT-50CM3/`, with the pictures and one `device.json`:
 
 ```json
 {
