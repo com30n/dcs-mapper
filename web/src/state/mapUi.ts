@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
+import type { Kind } from '../dcs/types'
 import type { Dialog, Listening } from './types'
 
 export type Filter = 'all' | 'mapped' | 'free' | 'problems'
@@ -51,6 +52,8 @@ export const useMapUi = create<MapUiState>()(
     },
   ),
 )
+
+export const categoryId = (kind: Kind, name = '') => (kind === 'axis' ? 'axis' : `key:${name}`)
 
 export const closeDialog = () => useMapUi.setState({ dialog: null })
 export const cancel = () => useMapUi.setState({ listening: null, adding: [], addAxis: false, focus: null, drawer: false })

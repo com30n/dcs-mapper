@@ -1,4 +1,5 @@
 import { Fragment } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { inputLabel, isAxisKey, markLabel } from '../../dcs/combos'
 import { frameLayout, pct } from '../../data/frame'
 import type { Device, Frame } from '../../data/types'
@@ -99,7 +100,7 @@ function CalloutView({ device, frame, info, callouts, focus }: CalloutViewProps)
 
 export function MapPicture({ s, entry, highlight }: { s: SessionState; entry: Entry; highlight: Set<string> }) {
   const { t, tr, trUi } = useWords()
-  const { listening, focus, adding } = useMapUi()
+  const { listening, focus, adding } = useMapUi(useShallow((m) => ({ listening: m.listening, focus: m.focus, adding: m.adding })))
   const device = s.devices[entry.deviceId]
   if (!device.views.length) return <Notice as="p">{t('map.noPicture')}</Notice>
   const listened = listening ? (entry.wanted![listening.kind][listening.hash] ?? []).map((c) => c.key) : []

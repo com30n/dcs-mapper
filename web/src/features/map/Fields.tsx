@@ -14,16 +14,21 @@ import styles from './Fields.module.css'
 import { openTune } from './dialogs/open'
 import map from './Map.module.css'
 
-function Field({ s, entry, slot }: { s: SessionState; entry: Entry; slot: Slot }) {
+function Field({ s, entry, slot, section }: { s: SessionState; entry: Entry; slot: Slot; section: string }) {
   const { t, tr } = useWords()
-  const { listening, addAxis, focus, flash, scrollTo } = useMapUi()
-  const ref = useRef<HTMLDivElement>(null)
   const { command, kind } = slot
+  const combos = entry.wanted![kind][command.hash] ?? []
+  const active = useMapUi((m) => m.listening?.hash === command.hash)
+  const addAxis = useMapUi((m) => m.listening?.hash === command.hash && m.addAxis)
+  const focus = useMapUi((m) => (combos.some((c) => c.key === m.focus) ? m.focus : null))
+  const flash = useMapUi((m) => m.flash === command.hash)
+  const scrollHere = useMapUi((m) => m.scrollTo === `${section}|${command.hash}`)
+  const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (scrollTo !== `cmd:${command.hash}`) return
+    if (!scrollHere) return
     ref.current?.scrollIntoView({ block: 'center' })
     useMapUi.setState({ scrollTo: null })
-  }, [scrollTo, command.hash])
+  }, [scrollHere])
   const label = (
     <span className={styles.slotLabel}>
       {slot.position || t('map.action')}{kind === 'axis' && <span className={styles.axisTag}>{t('map.axisTag')}</span>}
@@ -38,8 +43,6 @@ function Field({ s, entry, slot }: { s: SessionState; entry: Entry; slot: Slot }
   }
   const hash = command.hash
   const name = tr(command.name)
-  const combos = entry.wanted![kind][hash] ?? []
-  const active = listening?.hash === hash
   const pick = () => listen(hash, kind, name)
   if (active || !combos.length) {
     const bound = combos.map(comboText).join(', ')
@@ -58,7 +61,7 @@ function Field({ s, entry, slot }: { s: SessionState; entry: Entry; slot: Slot }
     <div ref={ref} className={styles.slot}>{label}
       {combos.map((combo, i) => {
         const issue = comboIssue(s, entry, combo, hash)
-        const state = issue ? 'warn' : flash === hash ? 'flash' : combo.key === focus ? 'focus' : null
+        const state = issue ? 'warn' : flash ? 'flash' : combo.key === focus ? 'focus' : null
         const about = `${name} · ${comboText(combo)}`
         return (
           <Fragment key={comboId(combo)}>
@@ -114,7 +117,7 @@ export function Section({ s, entry, id, label, all, collapsible, onToggle }: Sec
       {rows.map((row, i) => (
         <div key={i} className={styles.row} role="row">
           <div className={styles.control} role="cell"><strong>{row.control}</strong></div>
-          <div className={styles.slots} role="cell">{row.slots.map((slot) => <Field key={slot.command.hash} s={s} entry={entry} slot={slot} />)}</div>
+          <div className={styles.slots} role="cell">{row.slots.map((slot) => <Field key={slot.command.hash} s={s} entry={entry} slot={slot} section={id} />)}</div>
         </div>
       ))}
       {!rows.length && <p className={cx('muted', map.pad)}>{t('map.noCommands')}</p>}

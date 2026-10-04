@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useState, type ReactNode } from 'react'
+import { usePrepared } from '../../state/prepare'
 import { useNavigate } from 'react-router'
 import { comboText } from '../../dcs/combos'
 import { useWords } from '../../i18n/i18n'
@@ -158,6 +159,7 @@ function SheetRow({ s, entry, first }: { s: SessionState; entry: Entry; first: b
 }
 
 export function ExportScreen() {
+  usePrepared()
   const { t, tr } = useWords()
   const s = useSession()
   const navigate = useNavigate()

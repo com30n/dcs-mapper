@@ -1,6 +1,6 @@
 import { controlName, dcsCompare } from '../../dcs/combos'
 import { KINDS, type Bindings, type Command, type Kind, type Profile } from '../../dcs/types'
-import type { Filter } from '../../state/mapUi'
+import { categoryId, type Filter } from '../../state/mapUi'
 import { comboIssue } from '../../state/problems'
 import type { SessionState } from '../../state/session'
 import type { Entry } from '../../state/types'
@@ -27,8 +27,6 @@ export interface Row {
 }
 
 type Translate = (text: string) => string
-
-export const categoryId = (kind: Kind, name = '') => (kind === 'axis' ? 'axis' : `key:${name}`)
 
 export const categoryLabel = (category: Category, tr: Translate) => tr(category.kind === 'axis' ? 'Axis Commands' : category.name)
 

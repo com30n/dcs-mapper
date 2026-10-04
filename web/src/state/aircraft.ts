@@ -2,6 +2,7 @@ import i18n from 'i18next'
 import { loadAircraftIndex, loadCatalog, loadDeviceIndex, loadLanguages } from '../data/load'
 import { loadAircraftWords, setLanguage } from '../i18n/i18n'
 import { ensureDevices, loadFromFolder } from './devices'
+import { forget } from './history'
 import { useMapUi } from './mapUi'
 import { setupOf, useSession } from './session'
 
@@ -25,6 +26,7 @@ export async function chooseAircraft(id: string, restoring = false) {
     s.aircraftId = id
     s.active = restoring ? Math.max(0, Math.min(s.active, setupOf(s).entries.length - 1)) : 0
   })
+  forget()
   if (restoring) return
   useMapUi.setState({ open: null })
   await loadFromFolder()

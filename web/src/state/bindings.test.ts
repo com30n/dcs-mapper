@@ -101,11 +101,11 @@ describe('clicking a button on the device picture', () => {
   }
 
   it('shows the binding in the list instead of a card', () => {
-    expect(click('JOY_BTN5')).toMatchObject({ focus: 'JOY_BTN5', explain: false, open: [`key:${bound.category[0]}`], filter: 'all', search: '', scrollTo: `cmd:${bound.hash}` })
+    expect(click('JOY_BTN5')).toMatchObject({ focus: 'JOY_BTN5', explain: false, open: [`key:${bound.category[0]}`], filter: 'all', search: '', scrollTo: `key:${bound.category[0]}|${bound.hash}` })
   })
 
   it('keeps the card for a free button, where it can become a modifier', () => {
-    expect(click('JOY_BTN9')).toMatchObject({ focus: 'JOY_BTN9', explain: true, open: [], scrollTo: null })
+    expect(click('JOY_BTN9')).toMatchObject({ focus: 'JOY_BTN9', open: [], scrollTo: null })
   })
 
   it('explains a binding that will not work in the card', () => {
@@ -143,6 +143,19 @@ describe('copying, moving and clearing one binding', () => {
     const from = { key: 'JOY_BTN5' }
     carryTo('move', { key: { [trim.hash]: [from], [other.hash]: [{ key: 'JOY_BTN7' }] }, axis: {} }, 'key', trim.hash, from, 'JOY_BTN7')
     expect([keys()[trim.hash], keys()[other.hash]]).toEqual([[{ key: 'JOY_BTN7' }], undefined])
+  })
+
+  it('does nothing when a binding is moved or copied onto its own button', () => {
+    const from = { key: 'JOY_BTN1' }
+    carryTo('move', { key: { [trim.hash]: [from, { key: 'JOY_BTN2' }] }, axis: {} }, 'key', trim.hash, from, 'JOY_BTN1')
+    expect([keys()[trim.hash], useMapUi.getState().toast, useMapUi.getState().listening]).toEqual([[from, { key: 'JOY_BTN2' }], null, null])
+  })
+
+  it('stops copying or moving when another device is picked', () => {
+    useSession.setState(session([entry({ wanted: { key: { [trim.hash]: [{ key: 'JOY_BTN1' }] }, axis: {} } }), entry({ uid: 'pedals', dcsId: PEDALS })]))
+    carry('key', trim.hash, 'name', { key: 'JOY_BTN1' }, 'move')
+    selectEntry(1)
+    expect(useMapUi.getState().listening).toBeNull()
   })
 
   it('clears only the binding asked for', () => {

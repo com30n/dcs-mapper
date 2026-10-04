@@ -81,6 +81,7 @@
   "map.carryCopy": "Copy the binding",
   "map.carryMove": "Move the binding",
   "map.carryText": "Press the new button on your device, or click it on the picture. The modifier and the tune go with it.",
+  "map.carryTextAxis": "Move the new axis on your device, or click it on the picture. The modifier and the tune go with it.",
   "map.noCommands": "No commands here.",
   "map.waiting": "Waiting for your device",
   "map.cancel": "Cancel",

@@ -51,7 +51,7 @@ export function StatusCard({ s, entry }: { s: SessionState; entry: Entry }) {
       <div className={cx(styles.status, styles.listening)} role="status">
         <span className="eyebrow">{t(listening.carry.mode === 'move' ? 'map.carryMove' : 'map.carryCopy')}</span>
         <strong>{listening.name} · {comboText(listening.carry.combo)}</strong>
-        <span className={styles.listenText}>{t('map.carryText')}</span>
+        <span className={styles.listenText}>{t(listening.kind === 'axis' ? 'map.carryTextAxis' : 'map.carryText')}</span>
         <Button variant="ghost" small onClick={cancel}>{t('map.cancel')}</Button>
       </div>
     )

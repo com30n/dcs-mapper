@@ -104,7 +104,7 @@ export async function toggleDevice(id: string) {
 }
 
 export async function addFiles(files: File[]) {
-  remember()
+  let noted = false
   for (const file of files) {
     const name = file.name.replace(/\.diff\.lua$/i, '').replace(/\.lua$/i, '')
     const text = await file.text()
@@ -116,6 +116,8 @@ export async function addFiles(files: File[]) {
     const s = get()
     const id = name.includes('{') ? canonicalId(s, name) : ''
     const device = await deviceFor(name, diff)
+    if (!noted) remember()
+    noted = true
     pushEntry(newEntry(get(), device, id, 'file', { name: file.name, text }))
   }
 }
@@ -176,11 +178,14 @@ export const setPresetFile = async (uid: string, file: File) => {
   remember()
   updateEntry(uid, (e) => { e.fileText = text; e.fileName = file.name; e.start = 'file' })
 }
-export const linkPad = (uid: string, padId: string, padIndex: number) => useSession.setState((s) => {
-  const dcsId = draftSetup(s).entries.find((e) => e.uid === uid)?.dcsId ?? ''
-  for (const e of allEntries(s).filter((e) => e.uid === uid || sameDevice(e.dcsId, dcsId))) Object.assign(e, { padId, padIndex })
-  if (dcsId.includes('{')) s.links[dcsId.toLowerCase()] = { padId, padIndex }
-})
+export function linkPad(uid: string, padId: string, padIndex: number) {
+  remember()
+  useSession.setState((s) => {
+    const dcsId = draftSetup(s).entries.find((e) => e.uid === uid)?.dcsId ?? ''
+    for (const e of allEntries(s).filter((e) => e.uid === uid || sameDevice(e.dcsId, dcsId))) Object.assign(e, { padId, padIndex })
+    if (dcsId.includes('{')) s.links[dcsId.toLowerCase()] = { padId, padIndex }
+  })
+}
 
 export async function changePicture(uid: string, deviceId: string) {
   const s = get()

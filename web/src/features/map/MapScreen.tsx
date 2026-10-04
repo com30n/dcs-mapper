@@ -1,6 +1,7 @@
 import * as Tabs from '@radix-ui/react-tabs'
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
+import { useShallow } from 'zustand/react/shallow'
 import { inputLabel } from '../../dcs/combos'
 import { forceFeedbackFor } from '../../dcs/forceFeedback'
 import { useWatchPads } from '../../gamepad/poll'
@@ -12,7 +13,7 @@ import { redo, undo } from '../../state/history'
 import { entryProfile, entryTemplate, padFor } from '../../state/lookup'
 import { cancel, useMapUi, type Filter } from '../../state/mapUi'
 import { openMods } from '../../state/modifiers'
-import { resetEntry } from '../../state/prepare'
+import { resetEntry, usePrepared } from '../../state/prepare'
 import { commandsUsing, problemsOf } from '../../state/problems'
 import { setupOf, useSession, type SessionState } from '../../state/session'
 import type { Entry } from '../../state/types'
@@ -66,11 +67,20 @@ function PadPill({ s, entry }: { s: SessionState; entry: Entry }) {
   )
 }
 
+function Dialogs({ s, entry }: { s: SessionState; entry: Entry }) {
+  const dialog = useMapUi((m) => m.dialog)
+  if (dialog?.type === 'mods') return <ModsDialog s={s} dialog={dialog} />
+  if (dialog?.type === 'tune') return <TuneDialog s={s} entry={entry} dialog={dialog} />
+  if (dialog?.type === 'ff') return <FfDialog s={s} entry={entry} draft={dialog.draft} />
+  return null
+}
+
 export function MapScreen() {
   useWatchPads()
   const { t, tr } = useWords()
   const s = useSession()
-  const ui = useMapUi()
+  const ui = useMapUi(useShallow((m) => ({ filter: m.filter, open: m.open, search: m.search, toast: m.toast, toastAction: m.toastAction, drawer: m.drawer, listening: m.listening })))
+  usePrepared()
   const navigate = useNavigate()
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -81,6 +91,9 @@ export function MapScreen() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
   const entries = setupOf(s).entries
+  useEffect(() => {
+    if (!entries.length) navigate('/devices')
+  }, [entries.length, navigate])
   const entry = entries[s.active]
   if (!entry?.wanted) return null
   const device = s.devices[entry.deviceId]
@@ -112,7 +125,6 @@ export function MapScreen() {
       {ui.toastAction && <Button small onClick={ui.toastAction === 'undo' ? undo : redo}>{t(ui.toastAction === 'undo' ? 'map.undo' : 'map.redo')}</Button>}
     </div>
   )
-  const dialog = ui.dialog
   return (
     <Tabs.Root className={styles.root} value={String(s.active)} onValueChange={(v) => selectEntry(Number(v))}>
       <div className={styles.contextbar}>
@@ -206,9 +218,7 @@ export function MapScreen() {
         <span className="muted">{t('map.footer', { count: mapped, problems: problemCount })}</span>
         <Button variant="primary" onClick={() => navigate('/export')}>{t('map.next')}<ArrowIcon /></Button>
       </Footer>
-      {dialog?.type === 'mods' && <ModsDialog s={s} dialog={dialog} />}
-      {dialog?.type === 'tune' && <TuneDialog s={s} entry={entry} dialog={dialog} />}
-      {dialog?.type === 'ff' && <FfDialog s={s} entry={entry} draft={dialog.draft} />}
+      <Dialogs s={s} entry={entry} />
     </Tabs.Root>
   )
 }

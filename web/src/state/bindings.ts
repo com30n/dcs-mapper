@@ -6,12 +6,11 @@ import type { AxisFilter, Combo, ForceFeedback, Kind } from '../dcs/types'
 import { usePads } from '../gamepad/store'
 import { tr } from '../i18n/i18n'
 import { entryProfile } from './lookup'
-import { useMapUi } from './mapUi'
-import { categoryId } from '../features/map/tree'
+import { categoryId, useMapUi } from './mapUi'
 import { remember, said } from './history'
 import { commandsUsing, modifierOn } from './problems'
 import { draftSetup, setupOf, useSession, type SessionState } from './session'
-import type { Entry } from './types'
+import type { Entry, Listening } from './types'
 
 const get = () => useSession.getState()
 const activeOf = (s: SessionState) => setupOf(s).entries[s.active] as Entry | undefined
@@ -23,16 +22,19 @@ function edit(uid: string, change: (entry: Entry) => void) {
   })
 }
 
+const waitFor = (listening: Listening) =>
+  useMapUi.setState({ listening, adding: [], addAxis: false, focus: null, flash: null, toast: null, toastAction: null, drawer: true })
+
 export function listen(hash: string, kind: Kind, name: string) {
   if (useMapUi.getState().listening?.hash === hash) return useMapUi.setState({ drawer: true })
-  useMapUi.setState({ listening: { hash, kind, name }, adding: [], addAxis: false, focus: null, flash: null, toast: null, toastAction: null, drawer: true })
+  waitFor({ hash, kind, name })
 }
 
 export function selectEntry(index: number) {
   const s = get()
   const to = setupOf(s).entries[index]
   const { listening } = useMapUi.getState()
-  const kept = listening && to && entryProfile(s, to).commands[listening.kind].some((c) => c.hash === listening.hash)
+  const kept = listening && !listening.carry && to && entryProfile(s, to).commands[listening.kind].some((c) => c.hash === listening.hash)
   useSession.setState({ active: index })
   useMapUi.setState({ listening: kept ? { ...listening } : null, focus: null, dialog: null })
 }
@@ -57,6 +59,7 @@ export function assign(input: string) {
   if (own && !axis && !carry) return toggleAdding(own)
   const reformers = [...new Set([...adding, ...heldModifiers(s, entry)])]
   const combo: Combo = carry ? { ...carry.combo, key: input } : reformers.length ? { key: input, reformers } : { key: input }
+  if (carry && sameCombo(combo, carry.combo)) return useMapUi.setState({ listening: null, adding: [], addAxis: false, drawer: false })
   const commands = entryProfile(s, entry).commands[listening.kind]
   const stays = (c: Combo) => carry ? !sameCombo(c, combo) && !(carry.mode === 'move' && sameCombo(c, carry.combo))
     : addAxis ? !sameCombo(c, combo) : layerOf(c) !== layerOf(combo)
@@ -89,17 +92,17 @@ export function find(input: string) {
   const s = get()
   const entry = activeOf(s)
   const using = entry?.wanted ? commandsUsing(s, entry, input) : []
-  if (!using.length) return useMapUi.setState({ focus: input, explain: true })
+  if (!using.length) return useMapUi.setState({ focus: input, explain: false })
   const { open, filter } = useMapUi.getState()
   const wanted = using.map(({ command, kind }) => categoryId(kind, command.category[0]))
   useMapUi.setState({
-    focus: input, explain: false, search: '', filter: filter === 'mapped' ? 'mapped' : 'all', scrollTo: `cmd:${using[0].command.hash}`,
+    focus: input, explain: false, search: '', filter: filter === 'mapped' ? 'mapped' : 'all', scrollTo: `${wanted[0]}|${using[0].command.hash}`,
     open: open && [...open, ...wanted.filter((id, i) => !open.includes(id) && wanted.indexOf(id) === i)],
   })
 }
 
 export const carry = (kind: Kind, hash: string, name: string, combo: Combo, mode: 'copy' | 'move') =>
-  useMapUi.setState({ listening: { hash, kind, name, carry: { combo, mode } }, adding: [], addAxis: false, focus: null, flash: null, toast: null, toastAction: null, drawer: true })
+  waitFor({ hash, kind, name, carry: { combo, mode } })
 
 export function press(input: string) {
   if (useMapUi.getState().listening) assign(input)

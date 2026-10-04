@@ -46,5 +46,24 @@ function step(from: Step[], to: Step[], done: 'undone' | 'redone') {
   })
 }
 
+interface KeyPress {
+  key: string
+  code: string
+  ctrlKey: boolean
+  metaKey: boolean
+  altKey: boolean
+  shiftKey: boolean
+  target: EventTarget | null
+}
+
+const TYPING = 'input:not([type=radio]):not([type=checkbox]):not([type=button]), textarea, [contenteditable]'
+
+export function keyAction({ key, code, ctrlKey, metaKey, altKey, shiftKey, target }: KeyPress) {
+  const z = /^[a-z]$/i.test(key) ? key.toLowerCase() === 'z' : code === 'KeyZ'
+  if (!(ctrlKey || metaKey) || altKey || !z) return null
+  if ((target as Element | null)?.closest?.(TYPING) || useMapUi.getState().dialog) return null
+  return shiftKey ? 'redo' : 'undo'
+}
+
 export const undo = () => step(past, future, 'undone')
 export const redo = () => step(future, past, 'redone')

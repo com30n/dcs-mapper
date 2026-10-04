@@ -1,7 +1,9 @@
+import { useEffect } from 'react'
 import { KEYBOARD_MODIFIERS } from '../dcs/combos'
 import { currentFrom, extraOf } from '../dcs/diff'
 import { parseLua } from '../dcs/lua'
 import type { Bindings, DeviceDiff, Modifiers } from '../dcs/types'
+import { fail } from './aircraft'
 import { installedDiff, installedText } from './devices'
 import { remember } from './history'
 import { entryProfile, entryTemplate, presetFor, uiPath, uiProfile, userDiffPath } from './lookup'
@@ -89,4 +91,11 @@ export async function resetEntry(uid: string) {
     if (target) target.ready = null
   })
   await prepareMap()
+}
+
+export function usePrepared() {
+  const unprepared = useSession((s) => setupOf(s).entries.some((e) => !e.wanted))
+  useEffect(() => {
+    if (unprepared) prepareMap().catch(fail)
+  }, [unprepared])
 }
