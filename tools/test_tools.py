@@ -78,6 +78,12 @@ def test_site_default_axis_filter_has_the_fields_dcs_writes():
     default = re.search(r'DEFAULT_FILTER\b[^=]*=\s*\{([^}]*)\}', site).group(1)
     assert set(re.findall(r'(\w+):', default)) == dcs, sorted(dcs)
 
+def test_dcs_install_is_read_from_the_log_with_or_without_quotes():
+    plain = r'INFO    APP (Main): Command line: D:\DCS World\bin\DCS.exe --no-launcher'
+    quoted = r'INFO    APP (Main): Command line: "H:\[steam]\steamapps\common\DCSWorld\bin\DCS.exe" --force_enable_VR'
+    assert aircraft.dcs_root_in(plain) == Path('D:/DCS World')
+    assert aircraft.dcs_root_in(quoted) == Path('H:/[steam]/steamapps/common/DCSWorld')
+
 def test_translations_keep_the_text_dcs_writes_verbatim():
     catalogs = [{'Autopilot override': 'Автопилот, временное отключение ', 'Blank': ' '}]
     assert aircraft.translate(catalogs, 'Autopilot override') == 'Автопилот, временное отключение '

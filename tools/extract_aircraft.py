@@ -22,8 +22,10 @@ DCS_LANGUAGE_CODES = {'cn': 'zh', 'jp': 'ja'}
 def find_dcs_root(explicit=None):
     if explicit:
         return Path(explicit)
-    log = (SAVED / 'Logs' / 'dcs.log').read_text(errors='ignore')
-    return Path(re.search(r'Command line: (.+?)\\bin(?:-mt)?\\DCS\.exe', log).group(1))
+    return dcs_root_in((SAVED / 'Logs' / 'dcs.log').read_text(errors='ignore'))
+
+def dcs_root_in(log):
+    return Path(re.search(r'Command line: "?(.+?)\\bin(?:-mt)?\\DCS\.exe', log).group(1))
 
 def read_actions(dll):
     data = dll.read_bytes()
