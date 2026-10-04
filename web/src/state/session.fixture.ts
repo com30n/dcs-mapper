@@ -19,7 +19,7 @@ const device: Device = { id: 'MOZA/AB9 + MH16', name: 'AB9', role: 'stick', dcsN
 
 export function entry(change: Partial<Entry> = {}): Entry {
   return {
-    uid: 'stick', deviceId: device.id, generic: null, dcsId: STICK, start: 'empty', startChosen: false, pictureChosen: false, fileText: null, fileName: null, ready: null,
+    uid: 'stick', deviceId: device.id, generic: null, dcsId: STICK, start: 'empty', pictureChosen: false, fileText: null, fileName: null, ready: null,
     wanted: { key: {}, axis: {} }, extra: {}, dead: [], padId: null, padIndex: null, uiWanted: { key: {}, axis: {} }, uiExtra: {}, uiChanged: false,
     ...change,
   }
@@ -29,7 +29,7 @@ export function session(entries: Entry[], modifiers: Modifiers = KEYBOARD_MODIFI
   return {
     aircraftId: catalog.id, active: 0, languages: [], aircraftIndex: [], library: [], catalog, uiCatalog,
     byAircraft: { [catalog.id]: { entries, modifiers, modifiersBase: KEYBOARD_MODIFIERS, modifiersChanged: modifiers !== KEYBOARD_MODIFIERS } },
-    devices: { [device.id]: device }, runtime: {}, originals: {}, folder: null, scan: EMPTY_SCAN, off: [], message: '',
+    devices: { [device.id]: device }, runtime: {}, originals: {}, folder: null, scan: EMPTY_SCAN, off: [], pictures: {}, links: {}, message: '',
     ...change,
   }
 }

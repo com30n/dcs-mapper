@@ -22,6 +22,8 @@ export interface SessionState {
   folder: DcsFolder | null
   scan: Scan
   off: string[]
+  pictures: Record<string, string>
+  links: Record<string, { padId: string; padIndex: number | null }>
   message: string
 }
 
@@ -42,20 +44,33 @@ export const useSession = create<SessionState>()(
       folder: null,
       scan: EMPTY_SCAN,
       off: [],
+      pictures: {},
+      links: {},
       message: '',
     }) as SessionState),
     {
       name: 'hotas-mapper-next-v1',
       storage: createJSONStorage(() => localStorage),
-      partialize: (s) => ({ aircraftId: s.aircraftId, byAircraft: s.byAircraft, active: s.active }),
+      partialize: (s) => ({ aircraftId: s.aircraftId, byAircraft: s.byAircraft, active: s.active, pictures: s.pictures, links: s.links }),
+      merge: (saved, current) => adoptOldAnswers({ ...current, ...(saved as Partial<SessionState>) }),
     },
   ),
 )
 
+export function adoptOldAnswers(s: SessionState): SessionState {
+  const pictures = { ...s.pictures }
+  const links = { ...s.links }
+  for (const e of Object.values(s.byAircraft).flatMap((a) => a.entries).filter((e) => e.dcsId.includes('{'))) {
+    const id = e.dcsId.toLowerCase()
+    if (e.pictureChosen) pictures[id] ??= e.generic ? '' : e.deviceId
+    if (e.padId) links[id] ??= { padId: e.padId, padIndex: e.padIndex }
+  }
+  return { ...s, pictures, links }
+}
+
 export const setupOf = (s: SessionState): AircraftSetup => (s.aircraftId && s.byAircraft[s.aircraftId]) || EMPTY_SETUP
 
-export function draftSetup(s: SessionState): AircraftSetup {
-  const id = s.aircraftId!
+export function draftSetup(s: SessionState, id = s.aircraftId!): AircraftSetup {
   s.byAircraft[id] ??= { entries: [], modifiers: null, modifiersBase: null, modifiersChanged: false }
   return s.byAircraft[id]
 }

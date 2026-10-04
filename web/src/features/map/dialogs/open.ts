@@ -17,8 +17,8 @@ export function draftFilter({ single, points, user, rest, ...filter }: TuneDraft
   return { ...rest, ...filter, curvature: user ? [...points] : [single] }
 }
 
-export const openTune = (entry: Entry, hash: string) =>
-  useMapUi.setState({ dialog: { type: 'tune', hash, drafts: (entry.wanted!.axis[hash] ?? []).map((c) => tuneDraft(c.filter)), at: 0, input: 0.4 } })
+export const openTune = (entry: Entry, hash: string, at = 0) =>
+  useMapUi.setState({ dialog: { type: 'tune', hash, drafts: (entry.wanted!.axis[hash] ?? []).map((c) => tuneDraft(c.filter)), at, input: 0.4 } })
 
 export const defaultsOf = (s: SessionState, entry: Entry) => forceFeedbackFor(s.catalog!, entryTemplate(s, entry))!
 

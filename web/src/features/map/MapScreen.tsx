@@ -7,7 +7,8 @@ import { useWatchPads } from '../../gamepad/poll'
 import { usePads } from '../../gamepad/store'
 import { useWords } from '../../i18n/i18n'
 import { fail } from '../../state/aircraft'
-import { selectEntry, undo } from '../../state/bindings'
+import { selectEntry } from '../../state/bindings'
+import { redo, undo } from '../../state/history'
 import { entryProfile, entryTemplate, padFor } from '../../state/lookup'
 import { cancel, useMapUi, type Filter } from '../../state/mapUi'
 import { openMods } from '../../state/modifiers'
@@ -21,7 +22,7 @@ import { Footer } from '../../ui/Footer'
 import { ArrowIcon } from '../../ui/icons'
 import { SearchField } from '../../ui/SearchField'
 import { Section } from './Fields'
-import { categoriesOf, categoryLabel, commandsIn, filterItems, isMapped, searchResults, type Category } from './tree'
+import { categoriesOf, categoryLabel, commandsIn, filterItems, isMapped, searchResults } from './tree'
 import { FfDialog } from './dialogs/FfDialog'
 import { openFf } from './dialogs/open'
 import { ModsDialog } from './dialogs/ModsDialog'
@@ -65,11 +66,6 @@ function PadPill({ s, entry }: { s: SessionState; entry: Entry }) {
   )
 }
 
-function defaultOpen(categories: Category[]) {
-  const hotas = categories.find((c) => c.name === 'HOTAS') ?? categories[0]
-  return hotas ? [hotas.id] : []
-}
-
 export function MapScreen() {
   useWatchPads()
   const { t, tr } = useWords()
@@ -90,7 +86,7 @@ export function MapScreen() {
   const device = s.devices[entry.deviceId]
   const profile = entryProfile(s, entry)
   const categories = categoriesOf(profile, tr)
-  const open = ui.open ?? defaultOpen(categories)
+  const open = ui.open ?? categories.map((c) => c.id)
   const narrowed = ui.filter !== 'all'
   const shown = categories.filter((c) => !narrowed || filterItems(s, entry, commandsIn(profile, c, tr), ui.filter).length)
   const total = profile.commands.key.length + profile.commands.axis.length
@@ -113,7 +109,7 @@ export function MapScreen() {
   const toast = ui.toast && (
     <div className={styles.toast} role="status">
       <span>{ui.toast}</span>
-      {ui.undo && <Button small onClick={undo}>{t('map.undo')}</Button>}
+      {ui.toastAction && <Button small onClick={ui.toastAction === 'undo' ? undo : redo}>{t(ui.toastAction === 'undo' ? 'map.undo' : 'map.redo')}</Button>}
     </div>
   )
   const dialog = ui.dialog
@@ -146,7 +142,10 @@ export function MapScreen() {
             </Chips>
             <div className={styles.navHead}>
               <span className="eyebrow">{t('map.categoriesAsInDcs')}</span>
-              <Button variant="link" small disabled={!open.length} onClick={() => useMapUi.setState({ open: [] })}>{t('map.collapseAll')}</Button>
+              <span className={styles.navActions}>
+                <Button variant="link" small disabled={open.length === categories.length} onClick={() => useMapUi.setState({ open: null })}>{t('map.selectAll')}</Button>
+                <Button variant="link" small disabled={!open.length} onClick={() => useMapUi.setState({ open: [] })}>{t('map.selectNone')}</Button>
+              </span>
             </div>
             <ul className={styles.tree}>
               {shown.map((category) => {

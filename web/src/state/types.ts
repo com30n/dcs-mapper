@@ -8,7 +8,6 @@ export interface Entry {
   generic: string | null
   dcsId: string
   start: Start
-  startChosen: boolean
   pictureChosen: boolean
   fileText: string | null
   fileName: string | null
@@ -48,6 +47,7 @@ export interface Listening {
   hash: string
   kind: Kind
   name: string
+  carry?: { combo: Combo; mode: 'copy' | 'move' }
 }
 
 export type Dialog =

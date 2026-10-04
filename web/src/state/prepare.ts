@@ -3,6 +3,7 @@ import { currentFrom, extraOf } from '../dcs/diff'
 import { parseLua } from '../dcs/lua'
 import type { Bindings, DeviceDiff, Modifiers } from '../dcs/types'
 import { installedDiff, installedText } from './devices'
+import { remember } from './history'
 import { entryProfile, entryTemplate, presetFor, uiPath, uiProfile, userDiffPath } from './lookup'
 import { draftSetup, setupOf, useSession } from './session'
 import type { Entry } from './types'
@@ -82,6 +83,7 @@ export async function prepareMap() {
 }
 
 export async function resetEntry(uid: string) {
+  remember()
   useSession.setState((s) => {
     const target = draftSetup(s).entries.find((e) => e.uid === uid)
     if (target) target.ready = null

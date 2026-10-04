@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { assign, saveTune, selectEntry } from './bindings'
+import { assign, carry, press, removeCombo, saveTune, selectEntry, why } from './bindings'
 import { useMapUi } from './mapUi'
-import { KEYBOARD_MODIFIERS } from '../dcs/combos'
+import { comboId, KEYBOARD_MODIFIERS } from '../dcs/combos'
+import type { Bindings, Combo, Kind } from '../dcs/types'
 import { catalog, entry, session, STICK } from './session.fixture'
 import { useSession } from './session'
 
@@ -86,5 +87,68 @@ describe('modifiers on axes, as DCS allows', () => {
     moveXForSlew({ [command.hash]: [{ key: 'JOY_X' }] })
     expect(axes()[command.hash]).toEqual([{ key: 'JOY_X' }])
     expect(axes()[slew.hash]).toEqual([{ key: 'JOY_X', reformers: ['Pinky'] }])
+  })
+})
+
+describe('clicking a button on the device picture', () => {
+  const bound = catalog.commands.key.find((c) => c.category.length)!
+
+  function click(input: string) {
+    useSession.setState(session([entry({ wanted: { key: { [bound.hash]: [{ key: 'JOY_BTN5' }] }, axis: {} } })]))
+    useMapUi.setState({ listening: null, open: [], filter: 'free', search: 'trim', focus: null, explain: false, scrollTo: null })
+    press(input)
+    return useMapUi.getState()
+  }
+
+  it('shows the binding in the list instead of a card', () => {
+    expect(click('JOY_BTN5')).toMatchObject({ focus: 'JOY_BTN5', explain: false, open: [`key:${bound.category[0]}`], filter: 'all', search: '', scrollTo: `cmd:${bound.hash}` })
+  })
+
+  it('keeps the card for a free button, where it can become a modifier', () => {
+    expect(click('JOY_BTN9')).toMatchObject({ focus: 'JOY_BTN9', explain: true, open: [], scrollTo: null })
+  })
+
+  it('explains a binding that will not work in the card', () => {
+    click('JOY_BTN5')
+    why('JOY_BTN5')
+    expect(useMapUi.getState()).toMatchObject({ focus: 'JOY_BTN5', explain: true })
+  })
+})
+
+describe('copying, moving and clearing one binding', () => {
+  const trim = catalog.commands.key[0]
+  const other = catalog.commands.key[1]
+  const keys = () => useSession.getState().byAircraft[catalog.id].entries[0].wanted!.key
+
+  function carryTo(mode: 'copy' | 'move', wanted: Bindings, kind: Kind, hash: string, from: Combo, input: string) {
+    useSession.setState(session([entry({ wanted })], withPinky))
+    carry(kind, hash, 'name', from, mode)
+    assign(input)
+  }
+
+  it('moves an axis with its modifier and tune to the new axis', () => {
+    const from = { key: 'JOY_X', reformers: ['Pinky'], filter: LEFT_HALF }
+    carryTo('move', { key: {}, axis: { [slew.hash]: [from] } }, 'axis', slew.hash, from, 'JOY_Y')
+    expect(axes()[slew.hash]).toEqual([{ key: 'JOY_Y', reformers: ['Pinky'], filter: LEFT_HALF }])
+    expect(useMapUi.getState().listening).toBeNull()
+  })
+
+  it('copies a binding and keeps the one it came from', () => {
+    const from = { key: 'JOY_BTN5', reformers: ['Pinky'] }
+    carryTo('copy', { key: { [trim.hash]: [from] }, axis: {} }, 'key', trim.hash, from, 'JOY_BTN7')
+    expect(keys()[trim.hash]).toEqual([from, { key: 'JOY_BTN7', reformers: ['Pinky'] }])
+  })
+
+  it('takes the new button over from the command that had it, as assigning does', () => {
+    const from = { key: 'JOY_BTN5' }
+    carryTo('move', { key: { [trim.hash]: [from], [other.hash]: [{ key: 'JOY_BTN7' }] }, axis: {} }, 'key', trim.hash, from, 'JOY_BTN7')
+    expect([keys()[trim.hash], keys()[other.hash]]).toEqual([[{ key: 'JOY_BTN7' }], undefined])
+  })
+
+  it('clears only the binding asked for', () => {
+    const kept = { key: 'JOY_BTN3', reformers: ['LAlt'] }
+    useSession.setState(session([entry({ wanted: { key: { [trim.hash]: [{ key: 'JOY_BTN1' }, kept] }, axis: {} } })]))
+    removeCombo('key', trim.hash, comboId({ key: 'JOY_BTN1' }), 'name')
+    expect(keys()[trim.hash]).toEqual([kept])
   })
 })

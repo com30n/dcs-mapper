@@ -7,7 +7,9 @@ import { usePads } from '../gamepad/store'
 import { tr } from '../i18n/i18n'
 import { entryProfile } from './lookup'
 import { useMapUi } from './mapUi'
-import { modifierOn } from './problems'
+import { categoryId } from '../features/map/tree'
+import { remember, said } from './history'
+import { commandsUsing, modifierOn } from './problems'
 import { draftSetup, setupOf, useSession, type SessionState } from './session'
 import type { Entry } from './types'
 
@@ -21,13 +23,9 @@ function edit(uid: string, change: (entry: Entry) => void) {
   })
 }
 
-function rememberUndo(entry: Entry) {
-  useMapUi.setState({ undo: { uid: entry.uid, wanted: entry.wanted! } })
-}
-
 export function listen(hash: string, kind: Kind, name: string) {
   if (useMapUi.getState().listening?.hash === hash) return useMapUi.setState({ drawer: true })
-  useMapUi.setState({ listening: { hash, kind, name }, adding: [], addAxis: false, focus: null, flash: null, toast: null, undo: null, drawer: true })
+  useMapUi.setState({ listening: { hash, kind, name }, adding: [], addAxis: false, focus: null, flash: null, toast: null, toastAction: null, drawer: true })
 }
 
 export function selectEntry(index: number) {
@@ -54,15 +52,17 @@ export function assign(input: string) {
   if (!entry?.wanted || !listening) return
   const axis = listening.kind === 'axis'
   if (isAxisKey(input) !== axis) return
+  const { carry } = listening
   const own = modifierOn(s, entry, input)
-  if (own && !axis) return toggleAdding(own)
+  if (own && !axis && !carry) return toggleAdding(own)
   const reformers = [...new Set([...adding, ...heldModifiers(s, entry)])]
-  const combo: Combo = reformers.length ? { key: input, reformers } : { key: input }
+  const combo: Combo = carry ? { ...carry.combo, key: input } : reformers.length ? { key: input, reformers } : { key: input }
   const commands = entryProfile(s, entry).commands[listening.kind]
-  const stays = (c: Combo) => (addAxis ? !sameCombo(c, combo) : layerOf(c) !== layerOf(combo))
+  const stays = (c: Combo) => carry ? !sameCombo(c, combo) && !(carry.mode === 'move' && sameCombo(c, carry.combo))
+    : addAxis ? !sameCombo(c, combo) : layerOf(c) !== layerOf(combo)
   const kept = (entry.wanted[listening.kind][listening.hash] ?? []).filter(stays)
   let movedFrom = ''
-  rememberUndo(entry)
+  remember()
   edit(entry.uid, (target) => {
     const table = target.wanted![listening.kind]
     for (const [hash, combos] of Object.entries(table)) {
@@ -76,45 +76,52 @@ export function assign(input: string) {
     table[listening.hash] = [...(table[listening.hash] ?? []).filter(stays), combo]
     target.dead = target.dead.filter((h) => h !== listening.hash)
   })
-  const toast = movedFrom ? 'toast.movedAssigned' : addAxis && kept.length ? 'toast.addedAxis' : 'toast.assigned'
+  const words = { command: listening.name, input: comboText(combo), from: movedFrom, kept: kept.map(comboText).join(', ') }
+  const toast = carry ? [i18n.t(`toast.${carry.mode === 'move' ? 'moved' : 'copied'}`, words), movedFrom && i18n.t('toast.takenFrom', words)].filter(Boolean).join(' ')
+    : i18n.t(movedFrom ? 'toast.movedAssigned' : addAxis && kept.length ? 'toast.addedAxis' : 'toast.assigned', words)
+  said(toast)
   useMapUi.setState({
-    toast: i18n.t(toast, { command: listening.name, input: comboText(combo), from: movedFrom, kept: kept.map(comboText).join(', ') }),
     flash: listening.hash, listening: null, adding: [], addAxis: false, drawer: false,
   })
 }
 
+export function find(input: string) {
+  const s = get()
+  const entry = activeOf(s)
+  const using = entry?.wanted ? commandsUsing(s, entry, input) : []
+  if (!using.length) return useMapUi.setState({ focus: input, explain: true })
+  const { open, filter } = useMapUi.getState()
+  const wanted = using.map(({ command, kind }) => categoryId(kind, command.category[0]))
+  useMapUi.setState({
+    focus: input, explain: false, search: '', filter: filter === 'mapped' ? 'mapped' : 'all', scrollTo: `cmd:${using[0].command.hash}`,
+    open: open && [...open, ...wanted.filter((id, i) => !open.includes(id) && wanted.indexOf(id) === i)],
+  })
+}
+
+export const carry = (kind: Kind, hash: string, name: string, combo: Combo, mode: 'copy' | 'move') =>
+  useMapUi.setState({ listening: { hash, kind, name, carry: { combo, mode } }, adding: [], addAxis: false, focus: null, flash: null, toast: null, toastAction: null, drawer: true })
+
 export function press(input: string) {
   if (useMapUi.getState().listening) assign(input)
-  else useMapUi.setState({ focus: input })
+  else find(input)
 }
 
-export const why = (input: string) => useMapUi.setState({ focus: input, listening: null })
+export const why = (input: string) => useMapUi.setState({ focus: input, explain: true, listening: null })
 
-export function clear(kind: Kind, hash: string, name: string) {
+export function removeCombo(kind: Kind, hash: string, id: string, name: string) {
   const entry = activeOf(get())!
-  rememberUndo(entry)
-  edit(entry.uid, (target) => { delete target.wanted![kind][hash] })
-  useMapUi.setState({ toast: i18n.t('toast.cleared', { command: name }) })
-}
-
-export function undo() {
-  const saved = useMapUi.getState().undo
-  if (saved) edit(saved.uid, (target) => { target.wanted = saved.wanted })
-  useMapUi.setState({ undo: null, toast: null })
-}
-
-export function removeCombo(kind: Kind, hash: string, id: string) {
-  const entry = activeOf(get())!
-  rememberUndo(entry)
+  remember()
   edit(entry.uid, (target) => {
     const left = (target.wanted![kind][hash] ?? []).filter((c) => comboId(c) !== id)
     if (left.length) target.wanted![kind][hash] = left
     else delete target.wanted![kind][hash]
     target.dead = target.dead.filter((h) => h !== hash)
   })
+  said(i18n.t('toast.cleared', { command: name }))
 }
 
 export function freeUi(uid: string, id: string) {
+  remember()
   edit(uid, (target) => {
     const table = target.uiWanted!.key
     for (const [hash, combos] of Object.entries(table)) {
@@ -130,7 +137,7 @@ export function freeUi(uid: string, id: string) {
 export function saveTune(hash: string, filters: AxisFilter[]) {
   const s = get()
   const entry = activeOf(s)!
-  rememberUndo(entry)
+  remember()
   edit(entry.uid, (target) => {
     target.wanted!.axis[hash].forEach((combo, i) => {
       if (isDefaultFilter(filters[i])) delete combo.filter
@@ -138,16 +145,19 @@ export function saveTune(hash: string, filters: AxisFilter[]) {
     })
   })
   const name = entryProfile(s, entry).commands.axis.find((c) => c.hash === hash)?.name ?? hash
-  useMapUi.setState({ toast: i18n.t('tune.saved', { command: tr(name) }), dialog: null })
+  said(i18n.t('tune.saved', { command: tr(name) }))
+  useMapUi.setState({ dialog: null })
 }
 
 export function saveForceFeedback(defaults: ForceFeedback, settings: ForceFeedback) {
   const s = get()
   const entry = activeOf(s)!
   const diff = forceFeedbackDiff(defaults, settings)
+  remember()
   edit(entry.uid, (target) => {
     if (Object.keys(diff).length) target.extra.ffDiffs = diff
     else delete target.extra.ffDiffs
   })
-  useMapUi.setState({ toast: i18n.t('ff.saved', { device: s.devices[entry.deviceId]?.name ?? '' }), undo: null, dialog: null })
+  said(i18n.t('ff.saved', { device: s.devices[entry.deviceId]?.name ?? '' }))
+  useMapUi.setState({ dialog: null })
 }

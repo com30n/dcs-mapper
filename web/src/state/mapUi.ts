@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
-import type { Bindings } from '../dcs/types'
 import type { Dialog, Listening } from './types'
 
 export type Filter = 'all' | 'mapped' | 'free' | 'problems'
@@ -14,9 +13,10 @@ export interface MapUiState {
   adding: string[]
   addAxis: boolean
   focus: string | null
+  explain: boolean
   flash: string | null
   toast: string | null
-  undo: { uid: string; wanted: Bindings } | null
+  toastAction: 'undo' | 'redo' | null
   drawer: boolean
   dialog: Dialog | null
   lastPressed: string | null
@@ -34,9 +34,10 @@ export const useMapUi = create<MapUiState>()(
       adding: [],
       addAxis: false,
       focus: null,
+      explain: false,
       flash: null,
       toast: null,
-      undo: null,
+      toastAction: null,
       drawer: false,
       dialog: null,
       lastPressed: null,

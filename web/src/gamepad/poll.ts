@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { AXES } from '../dcs/combos'
-import { assign } from '../state/bindings'
+import { assign, find } from '../state/bindings'
 import { linkPad } from '../state/devices'
 import { useMapUi } from '../state/mapUi'
 import { setupOf, useSession } from '../state/session'
@@ -46,6 +46,7 @@ function watch(entry: Entry, now: PadState) {
     return
   }
   if (fresh.length) useMapUi.setState({ lastPressed: fresh.at(-1)! })
+  if (fresh.length && !dialog) find(fresh.at(-1)!)
   if (dialog?.type === 'tune') {
     const combo = entry.wanted?.axis[dialog.hash]?.[dialog.at]
     const value = combo && now.axes[AXES.indexOf(combo.key)]

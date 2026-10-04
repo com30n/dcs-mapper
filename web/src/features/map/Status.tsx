@@ -21,7 +21,7 @@ function IssueBox({ s, entry, command, kind, combo }: { s: SessionState; entry: 
   const about = issue.code === 'uiLayer' ? trUi(issue.name) : 'name' in issue ? issue.name : ''
   const ui = 'ui' in issue ? issue : null
   const move = <Button key="move" small onClick={() => listen(command.hash, kind, name)}>{t('fix.move')}</Button>
-  const remove = <Button key="remove" small onClick={() => removeCombo(kind, command.hash, comboId(combo))}>{t('fix.remove')}</Button>
+  const remove = <Button key="remove" small onClick={() => removeCombo(kind, command.hash, comboId(combo), name)}>{t('fix.remove')}</Button>
   const free = ui && <Button key="free" small onClick={() => freeUi(ui.owner.uid, comboId(ui.ui.combo))}>{t('fix.freeUi')}</Button>
   const stop = <Button key="stop" small onClick={() => removeModifier(about)}>{t('fix.stopModifier', { input })}</Button>
   const create = <Button key="create" small onClick={() => openMods({ adding: 'modifier', name: about })}>{t('fix.createModifier', { name: about })}</Button>
@@ -44,8 +44,18 @@ function IssueBox({ s, entry, command, kind, combo }: { s: SessionState; entry: 
 
 export function StatusCard({ s, entry }: { s: SessionState; entry: Entry }) {
   const { t, tr, trUi } = useWords()
-  const { listening, adding, addAxis, focus } = useMapUi()
+  const { listening, adding, addAxis, focus, explain } = useMapUi()
   const modifiers = setupOf(s).modifiers ?? {}
+  if (listening?.carry) {
+    return (
+      <div className={cx(styles.status, styles.listening)} role="status">
+        <span className="eyebrow">{t(listening.carry.mode === 'move' ? 'map.carryMove' : 'map.carryCopy')}</span>
+        <strong>{listening.name} · {comboText(listening.carry.combo)}</strong>
+        <span className={styles.listenText}>{t('map.carryText')}</span>
+        <Button variant="ghost" small onClick={cancel}>{t('map.cancel')}</Button>
+      </div>
+    )
+  }
   if (listening) {
     const axis = listening.kind === 'axis'
     const here = axis ? (entry.wanted![listening.kind][listening.hash] ?? []).map(comboText).join(', ') : ''
@@ -80,6 +90,7 @@ export function StatusCard({ s, entry }: { s: SessionState; entry: Entry }) {
   }
   if (!focus) return null
   const using = commandsUsing(s, entry, focus)
+  if (using.length && !explain) return null
   const modifier = modifierOn(s, entry, focus)
   const ui = uiCombos(s, entry).filter((u) => u.combo.key === focus && !u.combo.reformers)
   const lines = [

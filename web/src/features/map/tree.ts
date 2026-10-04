@@ -28,12 +28,14 @@ export interface Row {
 
 type Translate = (text: string) => string
 
+export const categoryId = (kind: Kind, name = '') => (kind === 'axis' ? 'axis' : `key:${name}`)
+
 export const categoryLabel = (category: Category, tr: Translate) => tr(category.kind === 'axis' ? 'Axis Commands' : category.name)
 
 export function categoriesOf(profile: Profile, tr: Translate): Category[] {
   const names = new Set(profile.commands.key.flatMap((c) => c.category))
-  const key = [...names].sort((a, b) => dcsCompare(tr(a), tr(b))).map((name): Category => ({ id: `key:${name}`, kind: 'key', name }))
-  return profile.commands.axis.length ? [{ id: 'axis', kind: 'axis', name: '' }, ...key] : key
+  const key = [...names].sort((a, b) => dcsCompare(tr(a), tr(b))).map((name): Category => ({ id: categoryId('key', name), kind: 'key', name }))
+  return profile.commands.axis.length ? [{ id: categoryId('axis'), kind: 'axis', name: '' }, ...key] : key
 }
 
 const byName = (tr: Translate) => (a: Item, b: Item) => dcsCompare(tr(a.command.name), tr(b.command.name))

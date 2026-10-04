@@ -5,10 +5,12 @@ import type { Entry } from './types'
 import { EMPTY_SCAN } from '../folder/scan'
 import { luaFile } from '../dcs/lua'
 import { genericDevice } from '../data/load'
-import { addFiles, bestId, changePicture, loadFromFolder, setDcsId, setStart, toggleDevice } from './devices'
+import { addFiles, bestId, changePicture, linkPad, loadFromFolder, newEntry, setDcsId, toggleDevice } from './devices'
+import { useMapUi } from './mapUi'
+import { openFolder } from './folder'
 import { undecided } from './lookup'
 import { catalog, entry, session, STICK } from './session.fixture'
-import { setupOf, useSession } from './session'
+import { adoptOldAnswers, setupOf, useSession, type SessionState } from './session'
 
 const repo = resolve(import.meta.dirname, '..', '..', '..')
 const MOZA = 'MOZA AB9 FFB Base'
@@ -79,14 +81,14 @@ describe('one DCS id is one device in every aircraft', () => {
   const id = `${MOZA} {base}`
   const other = 'UH-1H'
 
-  function open(files: Record<string, object>, elsewhere: Entry[] = [], nameIn: Record<string, string> = {}) {
+  function open(files: Record<string, object>, elsewhere: Entry[] = [], nameIn: Record<string, string> = {}, pictures: Record<string, string> = {}) {
     serveRepo()
     const read = async (path: string) => {
       const aircraft = Object.keys(files).find((a) => path === `${a}/joystick/${nameIn[a] ?? id}.diff.lua`)
       return aircraft ? luaFile('diff', files[aircraft]) : null
     }
     const folder = { name: 'DCS', list: async () => [], read, log: async () => null }
-    const base = session([], undefined, { library, folder, scan: { ...EMPTY_SCAN, devices: [id], bindings: Object.fromEntries(Object.keys(files).map((a) => [a, [nameIn[a] ?? id]])) } })
+    const base = session([], undefined, { library, folder, pictures, scan: { ...EMPTY_SCAN, devices: [id], bindings: Object.fromEntries(Object.keys(files).map((a) => [a, [nameIn[a] ?? id]])) } })
     useSession.setState({ ...base, byAircraft: { ...base.byAircraft, [other]: { ...base.byAircraft[catalog.id], entries: elsewhere } } })
     return loadFromFolder().then(() => setupOf(useSession.getState()).entries[0])
   }
@@ -96,14 +98,14 @@ describe('one DCS id is one device in every aircraft', () => {
     expect((await open({ [catalog.folder]: {}, [other]: on('key', 'added', 'JOY_BTN30') }, [], { [other]: `${MOZA} {BASE}` })).deviceId).toBe('MOZA/MTQ + TQF')
   })
 
-  it('keeps the device the user chose for the id in another aircraft', async () => {
-    const loaded = await open({ [catalog.folder]: {} }, [entry({ uid: 'there', dcsId: id, deviceId: 'MOZA/MTQ + TQF', pictureChosen: true })])
+  it('keeps the device the user chose for the id', async () => {
+    const loaded = await open({ [catalog.folder]: {} }, [], {}, { [id.toLowerCase()]: 'MOZA/MTQ + TQF' })
     expect(loaded.deviceId).toBe('MOZA/MTQ + TQF')
     expect(loaded.pictureChosen).toBe(true)
   })
 
-  it('keeps no picture when the user chose none in another aircraft', async () => {
-    const loaded = await open({ [catalog.folder]: on('key', 'added', 'JOY_BTN30') }, [entry({ uid: 'there', dcsId: id, deviceId: none, generic: MOZA, pictureChosen: true })])
+  it('keeps no picture when the user chose none for the id', async () => {
+    const loaded = await open({ [catalog.folder]: on('key', 'added', 'JOY_BTN30') }, [], {}, { [id.toLowerCase()]: '' })
     expect([loaded.deviceId, undecided(useSession.getState(), loaded)]).toEqual([none, false])
   })
 
@@ -121,6 +123,7 @@ describe('one DCS id is one device in every aircraft', () => {
     await toggleDevice('MOZA/AB9 + MH16')
     const s = useSession.getState()
     expect(Object.values(s.byAircraft).flatMap((a) => a.entries).map((e) => [e.dcsId, e.deviceId, undecided(s, e)])).toEqual([[id, 'MOZA/AB9 + MH16', false], [id, 'MOZA/AB9 + MH16', false]])
+    expect(s.pictures).toEqual({ [id.toLowerCase()]: 'MOZA/AB9 + MH16' })
   })
 
   it('rebuilds a preset start here when the chosen device has no preset', async () => {
@@ -155,6 +158,7 @@ describe('one DCS id is one device in every aircraft', () => {
     setDcsId('here', warthog)
     expect(useSession.getState().byAircraft[other].entries[0].deviceId).toBe('Thrustmaster/HOTAS Warthog Throttle')
     expect(setupOf(useSession.getState()).entries[0].pictureChosen).toBe(false)
+    expect(useSession.getState().pictures).toEqual({})
   })
 
   it('tells devices apart only by a DCS id with its GUID', async () => {
@@ -164,6 +168,7 @@ describe('one DCS id is one device in every aircraft', () => {
     setDcsId('stick', MOZA)
     setDcsId('throttle', MOZA)
     expect(setupOf(useSession.getState()).entries.map((e) => e.deviceId)).toEqual(['MOZA/AB9 + MH16', 'MOZA/MTQ + TQF'])
+    expect(useSession.getState().pictures).toEqual({})
     setDcsId('stick', '')
     await addFiles([new File([luaFile('diff', on('key', 'added', 'JOY_BTN_POV1_U'))], `${MOZA}.diff.lua`)])
     expect(setupOf(useSession.getState()).entries[2].deviceId).toBe('MOZA/AB9 + MH16')
@@ -212,44 +217,128 @@ describe('picking devices in the library', () => {
 })
 
 describe('opening the DCS folder', () => {
-  const folder = { name: 'DCS', list: async () => [], read: async () => null, log: async () => null }
-  const button = { [catalog.commands.key[0].hash]: [{ key: 'JOY_BTN1' }] }
-  const axis = { [catalog.commands.axis[0].hash]: [{ key: 'JOY_X' }] }
+  const id = `${MOZA} {base}`
+  const pedals = `${PEDALS} {pedals}`
+  const read = async () => luaFile('diff', {})
 
-  async function open(change: Partial<Entry> = {}, before = () => {}) {
-    useSession.setState(session([entry({ start: 'empty', wanted: { key: {}, axis: {} }, ...change })], undefined, { folder, scan: { ...EMPTY_SCAN, bindings: { [catalog.folder]: [STICK] } } }))
-    before()
-    await loadFromFolder()
-    const s = useSession.getState()
-    return { start: setupOf(s).entries[0].start, told: s.message !== '' }
+  function folderWith(ids: string[]) {
+    const dirs: Record<string, { name: string; dir: boolean }[]> = { '': [{ name: catalog.folder, dir: true }], [`${catalog.folder}/joystick`]: ids.map((i) => ({ name: `${i}.diff.lua`, dir: false })) }
+    return { name: 'DCS', list: async (path: string) => dirs[path] ?? [], read, log: async () => null }
   }
 
-  it('shows what DCS has for a device the user has not changed yet', async () => {
-    expect(await open()).toEqual({ start: 'current', told: true })
+  function start(here: Entry[], elsewhere: Entry[] = [], change: Partial<SessionState> = {}) {
+    serveRepo()
+    const base = session(here, undefined, { library, active: 1, ...change })
+    useSession.setState(adoptOldAnswers({ ...base, byAircraft: { ...base.byAircraft, 'UH-1H': { ...base.byAircraft[catalog.id], entries: elsewhere } } }))
+  }
+
+  const all = () => Object.values(useSession.getState().byAircraft).flatMap((a) => a.entries)
+
+  it('builds every aircraft again from the folder and keeps which device each id is', async () => {
+    const edited = entry({ uid: 'edited', dcsId: id, padId: 'pad', padIndex: 2, wanted: { key: { [catalog.commands.key[0].hash]: [{ key: 'JOY_BTN1' }] }, axis: {} } })
+    start([entry({ uid: 'copy', dcsId: '' }), edited], [entry({ uid: 'elsewhere' })], { pictures: { [id.toLowerCase()]: 'MOZA/MTQ + TQF' } })
+    await openFolder(folderWith([id]))
+    expect(all().map((e) => [e.dcsId, e.deviceId, e.start, e.wanted, e.padId, e.padIndex])).toEqual([[id, 'MOZA/MTQ + TQF', 'current', null, 'pad', 2]])
+    expect(useSession.getState().active).toBe(0)
   })
 
-  it('keeps the buttons and axes the user has bound', async () => {
-    expect(await open({ wanted: { key: button, axis: {} } })).toEqual({ start: 'empty', told: false })
-    expect(await open({ wanted: { key: {}, axis } })).toEqual({ start: 'empty', told: false })
+  it('takes over the answers and links the previous version kept inside entries', () => {
+    const old = entry({ dcsId: id, deviceId: 'MOZA/MTQ + TQF', pictureChosen: true, padId: 'pad', padIndex: 3 })
+    const adopted = adoptOldAnswers(session([old, entry({ uid: 'nameless', dcsId: '', pictureChosen: true, padId: 'x' })]))
+    expect([adopted.pictures, adopted.links]).toEqual([{ [id.toLowerCase()]: 'MOZA/MTQ + TQF' }, { [id.toLowerCase()]: { padId: 'pad', padIndex: 3 } }])
   })
 
-  it('keeps the force feedback the user has tuned', async () => {
-    expect(await open({ extra: { ffDiffs: { trimmer: 0.5 } } })).toEqual({ start: 'empty', told: false })
+  it('asks again when the device chosen for an id can no longer be loaded', async () => {
+    start([], [], { pictures: { [id.toLowerCase()]: 'MOZA/Gone' } })
+    await openFolder(folderWith([id]))
+    const loaded = all()[0]
+    expect([loaded.deviceId, undecided(useSession.getState(), loaded)]).toEqual([none, true])
   })
 
-  it('keeps the start the user has picked', async () => {
-    expect(await open({}, () => setStart('stick', 'empty'))).toEqual({ start: 'empty', told: false })
+  it('gives a new gamepad link to every entry of the id', async () => {
+    start([], [entry({ uid: 'there', dcsId: id })])
+    useSession.setState((s) => ({ byAircraft: { ...s.byAircraft, [catalog.id]: { ...s.byAircraft['UH-1H'], entries: [entry({ uid: 'here', dcsId: id })] } } }))
+    linkPad('here', 'pad', 4)
+    expect(all().map((e) => [e.uid, e.padId, e.padIndex])).toEqual([['here', 'pad', 4], ['there', 'pad', 4]])
   })
 
-  it('keeps a preset the user has cleared', async () => {
-    expect(await open({ start: 'preset' })).toEqual({ start: 'preset', told: false })
+  it('keeps the devices of a folder opened while another was still loading out of it', async () => {
+    start([])
+    const second = folderWith([pedals])
+    let opened = false
+    vi.stubGlobal('fetch', async (path: string) => {
+      if (!opened && path.endsWith('device.json')) {
+        opened = true
+        await openFolder(second)
+      }
+      return new Response(readFileSync(resolve(repo, decodeURIComponent(path.slice(1)))))
+    })
+    await openFolder(folderWith([id]))
+    expect(all().map((e) => e.dcsId)).toEqual([pedals])
   })
 
-  it('does not report a device that already shows what DCS has', async () => {
-    expect(await open({ start: 'current', wanted: null })).toEqual({ start: 'current', told: false })
+  it('links a device the user links again to the new gamepad later on', async () => {
+    start([], [], { links: { [id.toLowerCase()]: { padId: 'old', padIndex: 0 } } })
+    await openFolder(folderWith([id]))
+    linkPad(all()[0].uid, 'new', 1)
+    const later = newEntry(useSession.getState(), library[0], id, 'current')
+    expect([later.padId, later.padIndex]).toEqual(['new', 1])
   })
 
-  it('keeps a file the user has given before opening the map', async () => {
-    expect(await open({ start: 'file', wanted: null, fileText: 'local diff = {}', fileName: 'mine.diff.lua' })).toEqual({ start: 'file', told: false })
+  it('keeps devices another aircraft loaded while the folder was read', async () => {
+    start([])
+    let loaded = false
+    vi.stubGlobal('fetch', async (path: string) => {
+      if (!loaded && path.endsWith('device.json')) {
+        loaded = true
+        useSession.setState((s) => ({ byAircraft: { ...s.byAircraft, 'UH-1H': { entries: [entry({ uid: 'b' })], modifiers: null, modifiersBase: null, modifiersChanged: false } } }))
+      }
+      return new Response(readFileSync(resolve(repo, decodeURIComponent(path.slice(1)))))
+    })
+    await openFolder(folderWith([id]))
+    expect(Object.fromEntries(Object.entries(useSession.getState().byAircraft).map(([a, setup]) => [a, setup.entries.length]))).toEqual({ [catalog.id]: 1, 'UH-1H': 1 })
+  })
+
+  it('adds the folder devices of an aircraft once and to that aircraft', async () => {
+    await openFolder(folderWith([id, pedals]))
+    useSession.setState((s) => ({ byAircraft: { ...s.byAircraft, [catalog.id]: { ...s.byAircraft[catalog.id], entries: [] } } }))
+    let switched = false
+    vi.stubGlobal('fetch', async (path: string) => {
+      if (!switched && path.endsWith('device.json')) {
+        switched = true
+        useSession.setState({ aircraftId: 'UH-1H' })
+      }
+      return new Response(readFileSync(resolve(repo, decodeURIComponent(path.slice(1)))))
+    })
+    await Promise.all([loadFromFolder(), loadFromFolder()])
+    expect(Object.fromEntries(Object.entries(useSession.getState().byAircraft).map(([a, setup]) => [a, setup.entries.map((e) => e.dcsId)]))).toEqual({ [catalog.id]: [id, pedals] })
+  })
+
+  it('keeps the gamepad links of devices the open aircraft does not use', async () => {
+    start([], [entry({ uid: 'there', dcsId: pedals, deviceId: 'Fanatec/Pedals', padId: 'wheel', padIndex: 1 })])
+    await openFolder(folderWith([id]))
+    const later = newEntry(useSession.getState(), library[2], pedals, 'current')
+    expect([later.padId, later.padIndex]).toEqual(['wheel', 1])
+  })
+
+  it('forgets what pointed at the dropped devices', async () => {
+    start([entry()])
+    useMapUi.setState({ identify: 'stick', focus: 'JOY_BTN1', listening: { hash: 'h', kind: 'key', name: 'n' }, dialog: { type: 'ff', draft: {} as never }, toast: 'old', toastAction: 'undo' })
+    await openFolder(folderWith([id]))
+    expect(useMapUi.getState()).toMatchObject({ identify: null, focus: null, listening: null, dialog: null, toast: null, toastAction: null })
+  })
+
+  it('puts the devices into the aircraft that was open when the folder was read', async () => {
+    start([])
+    let switched = false
+    vi.stubGlobal('fetch', async (path: string) => {
+      if (!switched && path.endsWith('device.json')) {
+        switched = true
+        useSession.setState({ aircraftId: 'UH-1H' })
+      }
+      return new Response(readFileSync(resolve(repo, decodeURIComponent(path.slice(1)))))
+    })
+    await openFolder(folderWith([id]))
+    expect(Object.fromEntries(Object.entries(useSession.getState().byAircraft).map(([a, setup]) => [a, setup.entries.length]))).toEqual({ [catalog.id]: 1 })
   })
 })

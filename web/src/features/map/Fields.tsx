@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { Fragment, useEffect, useRef } from 'react'
 import { isDefaultFilter } from '../../dcs/axis'
-import { comboText } from '../../dcs/combos'
+import { comboId, comboText } from '../../dcs/combos'
 import { useWords } from '../../i18n/i18n'
-import { clear, listen, why } from '../../state/bindings'
+import { carry, listen, removeCombo, why } from '../../state/bindings'
 import { useMapUi } from '../../state/mapUi'
 import { comboIssue, issueText } from '../../state/problems'
 import type { SessionState } from '../../state/session'
@@ -16,8 +16,14 @@ import map from './Map.module.css'
 
 function Field({ s, entry, slot }: { s: SessionState; entry: Entry; slot: Slot }) {
   const { t, tr } = useWords()
-  const { listening, addAxis, focus, flash } = useMapUi()
+  const { listening, addAxis, focus, flash, scrollTo } = useMapUi()
+  const ref = useRef<HTMLDivElement>(null)
   const { command, kind } = slot
+  useEffect(() => {
+    if (scrollTo !== `cmd:${command.hash}`) return
+    ref.current?.scrollIntoView({ block: 'center' })
+    useMapUi.setState({ scrollTo: null })
+  }, [scrollTo, command.hash])
   const label = (
     <span className={styles.slotLabel}>
       {slot.position || t('map.action')}{kind === 'axis' && <span className={styles.axisTag}>{t('map.axisTag')}</span>}
@@ -34,26 +40,43 @@ function Field({ s, entry, slot }: { s: SessionState; entry: Entry; slot: Slot }
   const name = tr(command.name)
   const combos = entry.wanted![kind][hash] ?? []
   const active = listening?.hash === hash
-  const issues = combos.map((c) => comboIssue(s, entry, c, hash))
-  const problemAt = issues.findIndex(Boolean)
-  const state = active ? 'listen' : !combos.length ? 'empty' : problemAt >= 0 ? 'warn' : flash === hash ? 'flash' : combos.some((c) => c.key === focus) ? 'focus' : null
-  const bound = combos.map(comboText).join(', ')
-  const waiting = addAxis && bound ? `${bound}, …` : t(kind === 'axis' ? 'map.moveAxisShort' : 'map.pressShort')
-  const text = active ? waiting : bound || t(kind === 'axis' ? 'map.assignAxis' : 'map.assignButton')
-  return (
-    <div className={styles.slot}>{label}
-      <div className={styles.slotRow}>
-        <button type="button" className={cx(styles.field, state && styles[state])} title={name} onClick={() => listen(hash, kind, name)}>{text}</button>
-        {combos.length > 0 && !active && <Button variant="icon" aria-label={t('map.clear')} onClick={() => clear(kind, hash, name)}>×</Button>}
-        {kind === 'axis' && combos.length > 0 && !active && (
-          <Button small tone="blue" className={styles.tune} title={t('tune.hint')} onClick={() => openTune(entry, hash)}>
-            {t('tune.button')}{combos.some((c) => !isDefaultFilter(c.filter)) ? ' ●' : ''}
-          </Button>
-        )}
+  const pick = () => listen(hash, kind, name)
+  if (active || !combos.length) {
+    const bound = combos.map(comboText).join(', ')
+    const waiting = addAxis && bound ? `${bound}, …` : t(kind === 'axis' ? 'map.moveAxisShort' : 'map.pressShort')
+    return (
+      <div ref={ref} className={styles.slot}>{label}
+        <div className={styles.slotRow}>
+          <button type="button" className={cx(styles.field, active ? styles.listen : styles.empty)} title={name} onClick={pick}>
+            {active ? waiting : t(kind === 'axis' ? 'map.assignAxis' : 'map.assignButton')}
+          </button>
+        </div>
       </div>
-      {problemAt >= 0 && (
-        <button type="button" className={styles.problem} title={issueText(issues[problemAt]!)} onClick={() => why(combos[problemAt].key)}>{t('map.why')}</button>
-      )}
+    )
+  }
+  return (
+    <div ref={ref} className={styles.slot}>{label}
+      {combos.map((combo, i) => {
+        const issue = comboIssue(s, entry, combo, hash)
+        const state = issue ? 'warn' : flash === hash ? 'flash' : combo.key === focus ? 'focus' : null
+        const about = `${name} · ${comboText(combo)}`
+        return (
+          <Fragment key={comboId(combo)}>
+            <div className={styles.slotRow}>
+              <button type="button" className={cx(styles.field, state && styles[state])} title={name} onClick={pick}>{comboText(combo)}</button>
+              {kind === 'axis' && (
+                <Button small tone="blue" className={styles.tune} title={t('tune.hint')} onClick={() => openTune(entry, hash, i)}>
+                  {t('tune.button')}{isDefaultFilter(combo.filter) ? '' : ' ●'}
+                </Button>
+              )}
+              <Button small aria-label={`${t('map.copy')}: ${about}`} onClick={() => carry(kind, hash, name, combo, 'copy')}>{t('map.copy')}</Button>
+              <Button small aria-label={`${t('map.move')}: ${about}`} onClick={() => carry(kind, hash, name, combo, 'move')}>{t('map.move')}</Button>
+              <Button small tone="warn" aria-label={`${t('map.clearOne')}: ${about}`} onClick={() => removeCombo(kind, hash, comboId(combo), name)}>{t('map.clearOne')}</Button>
+            </div>
+            {issue && <button type="button" className={styles.problem} title={issueText(issue)} onClick={() => why(combo.key)}>{t('map.why')}</button>}
+          </Fragment>
+        )
+      })}
     </div>
   )
 }
