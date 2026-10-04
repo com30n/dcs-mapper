@@ -3,7 +3,6 @@ import { inputLabel, markLabel } from '../../dcs/combos'
 import { frameLayout, MARK_SCALE } from '../../data/frame'
 import { pictureUrl } from '../../data/load'
 import { tr } from '../../i18n/i18n'
-import { modifierOn } from '../../state/problems'
 import { setupOf, type SessionState } from '../../state/session'
 import type { Entry } from '../../state/types'
 import { layoutCallouts, leader, wrapText } from '../../ui/callouts'
@@ -20,6 +19,7 @@ const INK2 = '#3B4452'
 const MUTED = '#566070'
 const TONE: Record<Tone, string> = { plain: INK, modifier: '#6B3FA0', ui: INK2, warn: INK, free: INK }
 const SIZES = [16, 14, 12]
+const COLORS = ['#0072B2', '#D55E00', '#00876A', '#8F6A00', '#B4407E']
 
 const imageFrom = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
   const img = new Image()
@@ -115,37 +115,41 @@ export async function drawSheet(s: SessionState, entry: Entry): Promise<Blob> {
   const seen = new Set<string>()
   const keys = layout.marks.filter((m) => !seen.has(m.input) && seen.add(m.input)).flatMap((m) => {
     const lines = keyLines(s, entry, m.input).filter((l) => l.tone !== 'warn' && l.tone !== 'free')
-    return lines.length ? [{ input: m.input, x: px + m.x / 100 * pw, y: py + m.y / 100 * ph, lines, modifier: !!modifierOn(s, entry, m.input) }] : []
+    return lines.length ? [{ input: m.input, x: px + m.x / 100 * pw, y: py + m.y / 100 * ph, lines }] : []
   })
 
   let size = SIZES[0]
   let placed: ReturnType<typeof layoutCallouts>['placed'] = []
   let rowsOf = new Map<string, { tone: Tone; rows: string[] }[]>()
-  for (size of SIZES) {
+  for (const [spill, tried] of [false, true].flatMap((spill) => SIZES.map((tried) => [spill, tried] as const))) {
+    size = tried
     const line = Math.round(size * 1.4)
     const font = `600 ${size}px Barlow`
     rowsOf = new Map(keys.map((k) => [k.input, k.lines.map((l) => ({ tone: l.tone, rows: wrapText(l.text, font, COLUMN - 24 - size * 2.6) }))]))
     const items = keys.map((k) => ({ id: k.input, x: k.x, y: k.y - TOP, height: rowsOf.get(k.input)!.reduce((n, l) => n + l.rows.length, 0) * line + 14 }))
-    const result = layoutCallouts(items, { width: W, height: BOTTOM - TOP, column: COLUMN, inset: MARGIN, gap: 10 })
+    const result = layoutCallouts(items, { width: W, height: BOTTOM - TOP, column: COLUMN, inset: MARGIN, gap: 10, spill })
     placed = result.placed.map((p) => ({ ...p, top: p.top + TOP, anchorY: p.anchorY + TOP, y: p.y + TOP }))
     if (result.height <= BOTTOM - TOP) break
   }
 
-  ctx.strokeStyle = '#8994A3'
-  ctx.lineWidth = 1.5
+  const colorOf = new Map<string, string>()
+  for (const side of ['left', 'right']) {
+    placed.filter((p) => p.side === side).sort((a, b) => a.top - b.top).forEach((p, i) => colorOf.set(p.id, COLORS[i % COLORS.length]))
+  }
+  ctx.lineWidth = 2
   for (const p of placed) {
     const l = leader({ x: p.anchorX, y: p.anchorY }, { x: p.x, y: p.y }, 16)
+    ctx.strokeStyle = colorOf.get(p.id)!
     ctx.beginPath()
     ctx.moveTo(l.x1, l.y1)
     ctx.lineTo(l.x2, l.y2)
     ctx.stroke()
   }
   for (const k of keys) {
-    pill(ctx, markLabel(k.input), k.x, k.y, markSize, k.modifier ? '#6B3FA0' : INK2, true)
+    pill(ctx, markLabel(k.input), k.x, k.y, markSize, colorOf.get(k.input)!, true)
   }
   const line = Math.round(size * 1.4)
   for (const p of placed) {
-    const key = keys.find((k) => k.input === p.id)!
     ctx.fillStyle = '#FFFFFF'
     ctx.strokeStyle = '#C3CBD5'
     ctx.lineWidth = 1
@@ -153,7 +157,7 @@ export async function drawSheet(s: SessionState, entry: Entry): Promise<Blob> {
     ctx.roundRect(p.left + 0.5, p.top + 0.5, COLUMN - 1, p.height - 1, 8)
     ctx.fill()
     ctx.stroke()
-    const badge = pill(ctx, markLabel(p.id), p.left + 10, p.top + 7 + line / 2, Math.round(size * 1.5), key.modifier ? '#6B3FA0' : INK2, false)
+    const badge = pill(ctx, markLabel(p.id), p.left + 10, p.top + 7 + line / 2, Math.round(size * 1.5), colorOf.get(p.id)!, false)
     ctx.textAlign = 'left'
     ctx.textBaseline = 'top'
     let y = p.top + 7 + (line - size) / 2

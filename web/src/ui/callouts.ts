@@ -19,34 +19,79 @@ interface Box {
   column: number
   inset?: number
   gap?: number
+  spill?: boolean
 }
 
-export function layoutCallouts(items: CalloutItem[], { width, height, column, inset = 4, gap = 8 }: Box) {
-  const sides = { left: [] as CalloutItem[], right: [] as CalloutItem[] }
-  for (const item of items) sides[item.x < width / 2 ? 'left' : 'right'].push(item)
-  const needed = Math.max(...Object.values(sides).map((list) => list.reduce((sum, it) => sum + it.height + gap, 0)))
-  const boxHeight = Math.max(height, needed)
-  const placed: PlacedCallout[] = []
-  for (const side of ['left', 'right'] as const) {
-    const list = [...sides[side]].sort((a, b) => a.y - b.y)
-    const tops: number[] = []
-    let next = 0
-    for (const it of list) {
-      tops.push(Math.max(it.y - it.height / 2, next))
-      next = tops.at(-1)! + it.height + gap
+function closestTops(list: CalloutItem[], boxHeight: number, gap: number) {
+  const offsets: number[] = []
+  const blocks: { from: number; sum: number; mean: number }[] = []
+  list.forEach((it, i) => {
+    offsets.push(i ? offsets[i - 1] + (list[i - 1].height + it.height) / 2 + gap : 0)
+    let block = { from: i, sum: it.y - offsets[i], mean: it.y - offsets[i] }
+    while (blocks.length && blocks.at(-1)!.mean >= block.mean) {
+      const prev = blocks.pop()!
+      block = { from: prev.from, sum: prev.sum + block.sum, mean: (prev.sum + block.sum) / (i - prev.from + 1) }
     }
-    let limit = boxHeight
-    for (let i = list.length - 1; i >= 0; i--) {
-      tops[i] = Math.min(tops[i], limit - list[i].height)
-      limit = tops[i] - gap
+    blocks.push(block)
+  })
+  const low = list.length ? list[0].height / 2 : 0
+  const high = list.length ? boxHeight - list.at(-1)!.height / 2 - offsets.at(-1)! : 0
+  return list.map((it, i) => {
+    const center = blocks.findLast((b) => b.from <= i)!.mean
+    return Math.min(Math.max(center, low), high) + offsets[i] - it.height / 2
+  })
+}
+
+const turn = (a: { x: number; y: number }, b: { x: number; y: number }, c: { x: number; y: number }) =>
+  Math.sign((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x))
+
+function crosses(a: PlacedCallout, b: PlacedCallout) {
+  const [a1, b1] = [{ x: a.anchorX, y: a.anchorY }, { x: b.anchorX, y: b.anchorY }]
+  return turn(a1, a, b1) * turn(a1, a, b) < 0 && turn(b1, b, a1) * turn(b1, b, a) < 0
+}
+
+export function layoutCallouts(items: CalloutItem[], { width, height, column, inset = 4, gap = 8, spill = true }: Box) {
+  const need = (list: CalloutItem[]) => list.reduce((sum, it) => sum + it.height + gap, 0)
+  const own = { left: items.filter((it) => it.x < width / 2), right: items.filter((it) => it.x >= width / 2) }
+  const guests = { left: [] as CalloutItem[], right: [] as CalloutItem[] }
+  const total = (side: 'left' | 'right') => need(own[side]) + need(guests[side])
+  if (spill) {
+    for (const [from, to] of [['left', 'right'], ['right', 'left']] as const) {
+      for (const it of [...own[from]].sort((a, b) => b.y - a.y)) {
+        const size = it.height + gap
+        if (total(from) <= height || total(to) + size > total(from) - size) break
+        own[from] = own[from].filter((o) => o !== it)
+        guests[to] = [...guests[to], it]
+      }
     }
-    const left = side === 'left' ? inset : width - inset - column
-    list.forEach((it, i) => placed.push({
-      ...it, side, left, top: tops[i],
-      anchorX: side === 'left' ? left + column : left,
-      anchorY: tops[i] + it.height / 2,
-    }))
   }
+  const boxHeight = Math.max(height, total('left'), total('right'))
+  const byY = (list: CalloutItem[]) => [...list].sort((a, b) => a.y - b.y)
+  const placed = (['left', 'right'] as const).flatMap((side) => {
+    const left = side === 'left' ? inset : width - inset - column
+    const anchorX = side === 'left' ? left + column : left
+    const place = (order: CalloutItem[]) => {
+      const tops = closestTops(order, boxHeight, gap)
+      const placed = order.map((it, i): PlacedCallout => ({ ...it, side, left, top: tops[i], anchorX, anchorY: tops[i] + it.height / 2 }))
+      const length = placed.reduce((sum, p) => sum + Math.hypot(p.x - p.anchorX, p.y - p.anchorY), 0)
+      const crossings = placed.reduce((n, p, i) => n + placed.slice(i + 1).filter((q) => crosses(p, q)).length, 0)
+      return { order, placed, cost: length + crossings * column }
+    }
+    let best = place([...byY(own[side]), ...byY(guests[side])])
+    for (let improved = true; improved;) {
+      improved = false
+      for (let i = 1; i < best.order.length; i++) {
+        if (i === own[side].length) continue
+        const o = best.order
+        const tried = place([...o.slice(0, i - 1), o[i], o[i - 1], ...o.slice(i + 1)])
+        if (tried.cost < best.cost - 0.5) {
+          best = tried
+          improved = true
+        }
+      }
+    }
+    return best.placed
+  })
   return { placed, height: boxHeight }
 }
 
