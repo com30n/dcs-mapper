@@ -60,7 +60,7 @@ Then open http://localhost:8080.
 ### Kubernetes
 
 ```
-helm install hotas oci://ghcr.io/com30n/charts/dcs-mapper --version 1.1.0 --namespace hotas --create-namespace
+helm install hotas oci://ghcr.io/com30n/charts/dcs-mapper --version 1.2.0 --namespace hotas --create-namespace
 kubectl --namespace hotas port-forward service/hotas-dcs-mapper 8080:80
 ```
 
