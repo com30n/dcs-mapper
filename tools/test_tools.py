@@ -60,6 +60,20 @@ def test_every_button_of_the_ed_moza_preset_is_on_the_mh16_picture():
     assert len(used) >= 20, used
     assert used <= drawn, sorted(used - drawn)
 
+def test_every_input_of_the_ed_warthog_presets_is_on_its_pictures():
+    for template, folder in (('Joystick - HOTAS Warthog', 'Thrustmaster/HOTAS Warthog Joystick'),
+                             ('Throttle - HOTAS Warthog', 'Thrustmaster/HOTAS Warthog Throttle')):
+        used = set()
+        for path in (REPO / 'aircraft').glob('*/aircraft.json'):
+            preset = json.loads(path.read_text(encoding='utf-8'))['presets'].get(template) or {}
+            for section in ('keyDiffs', 'axisDiffs'):
+                for entry in preset.get(section, {}).values():
+                    for combo in entry.get('added', []) + entry.get('changed', []):
+                        used.add(combo['key'])
+                        used.update(combo.get('reformers', []))
+        drawn = {m['input'] for m in marks(folder)}
+        assert len(used) >= 20 and used <= drawn, (template, sorted(used - drawn))
+
 def test_mh16_picture_shows_moza_numbering():
     drawn = marks('MOZA/AB9 + MH16')
     inputs = {m['input'] for m in drawn}

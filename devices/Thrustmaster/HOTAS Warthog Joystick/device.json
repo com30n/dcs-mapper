@@ -1,0 +1,179 @@
+{
+ "name": "Thrustmaster HOTAS Warthog Joystick",
+ "role": "stick",
+ "dcsName": "Joystick - HOTAS Warthog",
+ "axes": [
+  {
+   "input": "JOY_X",
+   "label": "Stick left / right"
+  },
+  {
+   "input": "JOY_Y",
+   "label": "Stick forward / back"
+  }
+ ],
+ "pictures": {
+  "stick.png": {
+   "size": [
+    1140,
+    1150
+   ],
+   "marks": [
+    {
+     "input": "JOY_BTN1",
+     "x": 66.1,
+     "y": 27.96
+    },
+    {
+     "input": "JOY_BTN2",
+     "x": 36.23,
+     "y": 11.17
+    },
+    {
+     "input": "JOY_BTN3",
+     "x": 96.67,
+     "y": 42.26
+    },
+    {
+     "input": "JOY_BTN4",
+     "x": 94.61,
+     "y": 48.04
+    },
+    {
+     "input": "JOY_BTN5",
+     "x": 57.54,
+     "y": 22.04
+    },
+    {
+     "input": "JOY_BTN6",
+     "x": 71.4,
+     "y": 34.17
+    },
+    {
+     "input": "JOY_BTN7",
+     "x": 23.25,
+     "y": 18.3
+    },
+    {
+     "input": "JOY_BTN8",
+     "x": 27.94,
+     "y": 23.26
+    },
+    {
+     "input": "JOY_BTN9",
+     "x": 23.25,
+     "y": 28.0
+    },
+    {
+     "input": "JOY_BTN10",
+     "x": 18.09,
+     "y": 23.26
+    },
+    {
+     "input": "JOY_BTN11",
+     "x": 56.56,
+     "y": 32.3
+    },
+    {
+     "input": "JOY_BTN12",
+     "x": 61.03,
+     "y": 37.26
+    },
+    {
+     "input": "JOY_BTN13",
+     "x": 56.43,
+     "y": 42.02
+    },
+    {
+     "input": "JOY_BTN14",
+     "x": 51.84,
+     "y": 37.26
+    },
+    {
+     "input": "JOY_BTN15",
+     "x": 20.75,
+     "y": 33.7
+    },
+    {
+     "input": "JOY_BTN16",
+     "x": 26.12,
+     "y": 38.65
+    },
+    {
+     "input": "JOY_BTN17",
+     "x": 20.64,
+     "y": 43.43
+    },
+    {
+     "input": "JOY_BTN18",
+     "x": 15.72,
+     "y": 38.65
+    },
+    {
+     "input": "JOY_BTN19",
+     "x": 20.88,
+     "y": 38.61
+    },
+    {
+     "input": "JOY_BTN_POV1_U",
+     "x": 45.92,
+     "y": 3.09
+    },
+    {
+     "input": "JOY_BTN_POV1_UR",
+     "x": 49.69,
+     "y": 4.52
+    },
+    {
+     "input": "JOY_BTN_POV1_R",
+     "x": 51.01,
+     "y": 8.3
+    },
+    {
+     "input": "JOY_BTN_POV1_DR",
+     "x": 49.78,
+     "y": 12.26
+    },
+    {
+     "input": "JOY_BTN_POV1_D",
+     "x": 45.92,
+     "y": 13.52
+    },
+    {
+     "input": "JOY_BTN_POV1_DL",
+     "x": 41.84,
+     "y": 12.26
+    },
+    {
+     "input": "JOY_BTN_POV1_L",
+     "x": 40.61,
+     "y": 8.3
+    },
+    {
+     "input": "JOY_BTN_POV1_UL",
+     "x": 42.19,
+     "y": 4.52
+    },
+    {
+     "input": "JOY_X",
+     "x": 83.51,
+     "y": 90.43
+    },
+    {
+     "input": "JOY_Y",
+     "x": 78.95,
+     "y": 79.83
+    }
+   ]
+  }
+ },
+ "card": {
+  "picture": "stick.png"
+ },
+ "views": [
+  {
+   "name": "Main",
+   "picture": "stick.png"
+  }
+ ]
+}

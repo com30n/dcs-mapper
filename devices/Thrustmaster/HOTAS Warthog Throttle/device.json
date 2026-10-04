@@ -1,0 +1,267 @@
+{
+ "name": "Thrustmaster HOTAS Warthog Throttle",
+ "role": "throttle",
+ "dcsName": "Throttle - HOTAS Warthog",
+ "axes": [
+  {
+   "input": "JOY_RZ",
+   "label": "Left throttle"
+  },
+  {
+   "input": "JOY_Z",
+   "label": "Right throttle"
+  },
+  {
+   "input": "JOY_X",
+   "label": "Slew left / right"
+  },
+  {
+   "input": "JOY_Y",
+   "label": "Slew up / down"
+  },
+  {
+   "input": "JOY_SLIDER1",
+   "label": "Slider"
+  }
+ ],
+ "pictures": {
+  "throttle.png": {
+   "size": [
+    895,
+    1305
+   ],
+   "marks": [
+    {
+     "input": "JOY_BTN1",
+     "x": 50.22,
+     "y": 22.91
+    },
+    {
+     "input": "JOY_BTN2",
+     "x": 90.84,
+     "y": 45.52
+    },
+    {
+     "input": "JOY_BTN3",
+     "x": 90.61,
+     "y": 41.42
+    },
+    {
+     "input": "JOY_BTN4",
+     "x": 96.59,
+     "y": 45.56
+    },
+    {
+     "input": "JOY_BTN5",
+     "x": 90.84,
+     "y": 49.85
+    },
+    {
+     "input": "JOY_BTN6",
+     "x": 84.53,
+     "y": 45.59
+    },
+    {
+     "input": "JOY_BTN7",
+     "x": 88.55,
+     "y": 57.16
+    },
+    {
+     "input": "JOY_BTN8",
+     "x": 88.55,
+     "y": 60.92
+    },
+    {
+     "input": "JOY_BTN9",
+     "x": 88.77,
+     "y": 65.59
+    },
+    {
+     "input": "JOY_BTN10",
+     "x": 88.21,
+     "y": 69.5
+    },
+    {
+     "input": "JOY_BTN11",
+     "x": 83.18,
+     "y": 74.33
+    },
+    {
+     "input": "JOY_BTN12",
+     "x": 83.02,
+     "y": 78.16
+    },
+    {
+     "input": "JOY_BTN13",
+     "x": 4.92,
+     "y": 51.0
+    },
+    {
+     "input": "JOY_BTN14",
+     "x": 4.92,
+     "y": 54.9
+    },
+    {
+     "input": "JOY_BTN15",
+     "x": 83.8,
+     "y": 19.69
+    },
+    {
+     "input": "JOY_BTN29",
+     "x": 59.55,
+     "y": 97.2
+    },
+    {
+     "input": "JOY_BTN30",
+     "x": 29.11,
+     "y": 97.2
+    },
+    {
+     "input": "JOY_BTN_POV1_U",
+     "x": 39.27,
+     "y": 22.41
+    },
+    {
+     "input": "JOY_BTN_POV1_R",
+     "x": 44.92,
+     "y": 26.44
+    },
+    {
+     "input": "JOY_BTN_POV1_D",
+     "x": 39.33,
+     "y": 30.34
+    },
+    {
+     "input": "JOY_BTN_POV1_L",
+     "x": 33.46,
+     "y": 26.4
+    },
+    {
+     "input": "JOY_X",
+     "x": 72.07,
+     "y": 28.51
+    },
+    {
+     "input": "JOY_Y",
+     "x": 65.36,
+     "y": 21.46
+    },
+    {
+     "input": "JOY_Z",
+     "x": 65.36,
+     "y": 84.21
+    },
+    {
+     "input": "JOY_RZ",
+     "x": 22.91,
+     "y": 84.21
+    }
+   ]
+  },
+  "panel.png": {
+   "size": [
+    990,
+    1285
+   ],
+   "marks": [
+    {
+     "input": "JOY_BTN16",
+     "x": 57.42,
+     "y": 6.58
+    },
+    {
+     "input": "JOY_BTN17",
+     "x": 73.79,
+     "y": 6.58
+    },
+    {
+     "input": "JOY_BTN18",
+     "x": 57.53,
+     "y": 35.91
+    },
+    {
+     "input": "JOY_BTN19",
+     "x": 73.89,
+     "y": 35.84
+    },
+    {
+     "input": "JOY_BTN20",
+     "x": 65.61,
+     "y": 36.26
+    },
+    {
+     "input": "JOY_BTN21",
+     "x": 56.97,
+     "y": 59.92
+    },
+    {
+     "input": "JOY_BTN22",
+     "x": 13.38,
+     "y": 44.4
+    },
+    {
+     "input": "JOY_BTN23",
+     "x": 11.87,
+     "y": 62.37
+    },
+    {
+     "input": "JOY_BTN24",
+     "x": 20.0,
+     "y": 74.2
+    },
+    {
+     "input": "JOY_BTN25",
+     "x": 37.42,
+     "y": 74.2
+    },
+    {
+     "input": "JOY_BTN26",
+     "x": 45.35,
+     "y": 80.27
+    },
+    {
+     "input": "JOY_BTN27",
+     "x": 66.41,
+     "y": 74.2
+    },
+    {
+     "input": "JOY_BTN28",
+     "x": 66.92,
+     "y": 88.13
+    },
+    {
+     "input": "JOY_BTN31",
+     "x": 57.42,
+     "y": 23.85
+    },
+    {
+     "input": "JOY_BTN32",
+     "x": 73.79,
+     "y": 23.85
+    },
+    {
+     "input": "JOY_SLIDER1",
+     "x": 96.46,
+     "y": 51.36
+    }
+   ]
+  }
+ },
+ "card": {
+  "picture": "throttle.png",
+  "x": 0,
+  "y": 40,
+  "w": 100,
+  "h": 60
+ },
+ "views": [
+  {
+   "name": "Throttle",
+   "picture": "throttle.png"
+  },
+  {
+   "name": "Control panel",
+   "picture": "panel.png"
+  }
+ ]
+}
