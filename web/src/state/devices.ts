@@ -24,7 +24,7 @@ async function usedFor(name: string, diff: DeviceDiff) {
   const paths = Object.entries(scan.bindings).flatMap(([aircraft, names]) => names.filter((n) => sameId(n, name)).map((n) => `${aircraft}/joystick/${n}.diff.lua`))
   const texts = folder ? await Promise.all(paths.map((path) => folder.read(path))) : []
   const diffs = texts.flatMap((text) => { try { return text ? [parseLua(text) as DeviceDiff] : [] } catch { return [] } })
-  return [diff, ...diffs].flatMap(usedIn)
+  return [diff, ...diffs].map(usedIn).filter((used) => used.length)
 }
 
 const entryDevice = (entry: Entry) =>
@@ -39,9 +39,11 @@ async function knownDevice(name: string, diff: DeviceDiff = {}) {
   if (chosen !== undefined) return chosen ? loadDevice(chosen).catch(() => genericDevice(templateOf(name))) : genericDevice(templateOf(name))
   const candidates = candidatesFor(get(), name)
   if (!candidates.length) return null
-  const used = await usedFor(name, diff)
-  const fitting = (await Promise.all(candidates.map((d) => loadDevice(d.id).catch(() => null)))).filter((d) => fits(d, used))
-  return fitting.length === 1 ? fitting[0] : null
+  const files = await usedFor(name, diff)
+  const loaded = (await Promise.all(candidates.map((d) => loadDevice(d.id).catch(() => null)))).filter((d) => d !== null)
+  if (!files.length) return loaded.length === 1 ? loaded[0] : null
+  const [best, next] = loaded.map((device) => ({ device, score: files.filter((used) => fits(device, used)).length })).sort((a, b) => b.score - a.score)
+  return best?.score && best.score > (next?.score ?? 0) ? best.device : null
 }
 
 export async function deviceFor(name: string, diff: DeviceDiff = {}): Promise<Device> {

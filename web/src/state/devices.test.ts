@@ -98,6 +98,17 @@ describe('one DCS id is one device in every aircraft', () => {
     expect((await open({ [catalog.folder]: {}, [other]: on('key', 'added', 'JOY_BTN30') }, [], { [other]: `${MOZA} {BASE}` })).deviceId).toBe('MOZA/MTQ + TQF')
   })
 
+  it('takes the device that fits the files of the most aircraft', async () => {
+    const files = { [catalog.folder]: on('key', 'added', 'JOY_BTN_POV1_U'), [other]: on('key', 'added', 'JOY_BTN_POV1_L'), 'A-10C': on('key', 'added', 'JOY_BTN28') }
+    expect((await open(files)).deviceId).toBe('MOZA/AB9 + MH16')
+  })
+
+  it('keeps the only device of a name when most files fit it', async () => {
+    const fan = `${PEDALS} {wheel}`
+    const files = { [catalog.folder]: on('axis', 'added', 'JOY_SLIDER1'), [other]: on('axis', 'added', 'JOY_RZ') }
+    expect((await open(files, [], { [catalog.folder]: fan, [other]: fan })).deviceId).toBe('Fanatec/Pedals')
+  })
+
   it('keeps the device the user chose for the id', async () => {
     const loaded = await open({ [catalog.folder]: {} }, [], {}, { [id.toLowerCase()]: 'MOZA/MTQ + TQF' })
     expect(loaded.deviceId).toBe('MOZA/MTQ + TQF')
