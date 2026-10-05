@@ -28,7 +28,7 @@ export function entry(change: Partial<Entry> = {}): Entry {
 export function session(entries: Entry[], modifiers: Modifiers = KEYBOARD_MODIFIERS, change: Partial<SessionState> = {}): SessionState {
   return {
     aircraftId: catalog.id, active: 0, languages: [], aircraftIndex: [], library: [], catalog, uiCatalog,
-    byAircraft: { [catalog.id]: { entries, modifiers, modifiersBase: KEYBOARD_MODIFIERS, modifiersChanged: modifiers !== KEYBOARD_MODIFIERS } },
+    byAircraft: { [catalog.id]: { entries, modifiers, modifiersBase: KEYBOARD_MODIFIERS } },
     devices: { [device.id]: device }, runtime: {}, originals: {}, folder: null, scan: EMPTY_SCAN, off: [], pictures: {}, links: {}, message: '',
     ...change,
   }

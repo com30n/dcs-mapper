@@ -2,11 +2,11 @@ import { structuredPatch } from 'diff'
 import { strToU8, zipSync } from 'fflate'
 import i18n from 'i18next'
 import { filterWithDefaults, isDefaultFilter } from '../dcs/axis'
-import { comboId, comboText, dcsCompare, inputLabel, sameId } from '../dcs/combos'
+import { comboId, comboText, dcsCompare, inputLabel, KEYBOARD_MODIFIERS, sameId } from '../dcs/combos'
 import { buildDiff, namesOf } from '../dcs/diff'
 import { FORCE_FEEDBACK_KEYS, forceFeedbackFor } from '../dcs/forceFeedback'
 import { luaFile } from '../dcs/lua'
-import { KINDS, type AxisFilter, type Bindings, type Combo, type Command, type DeviceDiff, type Modifier, type Profile } from '../dcs/types'
+import { KINDS, type AxisFilter, type Bindings, type Combo, type Command, type DeviceDiff, type Modifier, type Modifiers, type Profile } from '../dcs/types'
 import { tr, trUi } from '../i18n/i18n'
 import { offChanged } from './folder'
 import { deviceLabel, entryProfile, entryTemplate, isOff, uiPath, uiProfile, userDiffPath } from './lookup'
@@ -27,6 +27,8 @@ function namedAs(original: DeviceDiff, translate: (text: string) => string) {
   return (c: Command) => names[c.hash] ?? (translate(c.name) || c.name)
 }
 
+const differ = (a: Modifiers, b: Modifiers) => [...new Set([...Object.keys(a), ...Object.keys(b)])].some((n) => JSON.stringify(a[n]) !== JSON.stringify(b[n]))
+
 export function exportFiles(s: SessionState) {
   const files: [string, string][] = []
   const skipped: Entry[] = []
@@ -40,7 +42,8 @@ export function exportFiles(s: SessionState) {
     files.push([userDiffPath(s, entry), luaFile('diff', buildDiff(entryProfile(s, entry), entry.wanted, entry.extra, namedAs(original, tr), original))])
     if (entry.uiChanged) files.push([uiPath(entry), luaFile('diff', buildDiff(uiProfile(s, entry), entry.uiWanted!, entry.uiExtra, namedAs(uiOriginal, trUi), uiOriginal))])
   }
-  if (setup.modifiersChanged) files.push([`${s.catalog!.folder}/modifiers.lua`, luaFile('modifiers', setup.modifiers)])
+  const { modifiers, modifiersBase } = setup
+  if (modifiers && (differ(modifiers, modifiersBase ?? {}) || differ(modifiers, KEYBOARD_MODIFIERS))) files.push([`${s.catalog!.folder}/modifiers.lua`, luaFile('modifiers', modifiers)])
   if (offChanged(s)) {
     files.push(['disabled.lua', luaFile('disabled', { pnp: false, ...s.scan.disabledFile, devices: Object.fromEntries(s.off.map((d) => [d, true])) })])
   }

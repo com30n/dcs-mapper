@@ -33,18 +33,13 @@ export function saveModifier() {
   useSession.setState((s) => {
     const setup = draftSetup(s)
     setup.modifiers = { ...setup.modifiers, [name]: { device: owner.dcsId, key: dialog.key, switch: dialog.adding === 'switch' } }
-    setup.modifiersChanged = true
   })
   editMods({ adding: null, key: '', name: null })
 }
 
 export function removeModifier(name: string) {
   remember()
-  useSession.setState((s) => {
-    const setup = draftSetup(s)
-    delete setup.modifiers![name]
-    setup.modifiersChanged = true
-  })
+  useSession.setState((s) => { delete draftSetup(s).modifiers![name] })
   useMapUi.setState((m) => { m.adding = m.adding.filter((n) => n !== name) })
 }
 
@@ -60,7 +55,6 @@ export function renameModifier(from: string, raw: string) {
     for (const entry of setup.entries) {
       for (const combos of Object.values(entry.wanted?.key ?? {})) for (const c of combos) if (c.reformers) c.reformers = c.reformers.map(rename)
     }
-    setup.modifiersChanged = true
   })
   useMapUi.setState((m) => { m.adding = m.adding.map(rename) })
 }

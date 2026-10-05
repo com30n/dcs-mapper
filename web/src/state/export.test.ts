@@ -28,6 +28,20 @@ describe('files to write', () => {
     expect(written).toMatchObject({ Shift: { device: STICK, key: 'JOY_BTN10', switch: true } })
   })
 
+  it('writes modifiers.lua whenever the aircraft has modifiers beyond the keyboard ones, even if the open folder already had them', () => {
+    const modifiers = { ...KEYBOARD_MODIFIERS, A1: { device: STICK, key: 'JOY_BTN1', switch: true } }
+    const s = session([entry()], modifiers)
+    s.byAircraft[catalog.id].modifiersBase = modifiers
+    expect(exportFiles(s).files.map(([path]) => path)).toContain('F-16C_50/modifiers.lua')
+  })
+
+  it('writes modifiers.lua with the keyboard ones when every other modifier of the folder was removed', () => {
+    const s = session([entry()])
+    s.byAircraft[catalog.id].modifiersBase = { ...KEYBOARD_MODIFIERS, A1: { device: STICK, key: 'JOY_BTN1', switch: true } }
+    const written = exportFiles(s).files.find(([path]) => path === 'F-16C_50/modifiers.lua')
+    expect(parseLua(written![1])).toEqual(KEYBOARD_MODIFIERS)
+  })
+
   it('keeps the other fields of disabled.lua when devices are turned off', () => {
     const scan = { ...EMPTY_SCAN, disabled: [], disabledFile: { pnp: true, devices: {} } }
     const s = session([], KEYBOARD_MODIFIERS, { folder, scan, off: [STICK] })

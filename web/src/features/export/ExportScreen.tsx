@@ -186,7 +186,7 @@ export function ExportScreen() {
         <h2>{t('export.what')}</h2>
         <p className="hint">{t(s.folder ? 'export.comparedInstalled' : 'export.comparedDefaults')}</p>
         {setup.entries.map((entry) => <EntryRows key={entry.uid} s={s} entry={entry} texts={texts} />)}
-        {setup.modifiersChanged && (
+        {texts.has(`${s.catalog!.folder}/modifiers.lua`) && (
           <FileRow s={s} texts={texts} role={aircraft} name={t('export.modifiers')} path={`${s.catalog!.folder}/modifiers.lua`} lines={modifierChanges(s)} />
         )}
         {offChanged(s) && <FileRow s={s} texts={texts} role={t('export.allAircraft')} name={t('export.offDevices')} path="disabled.lua" lines={offChanges(s)} />}

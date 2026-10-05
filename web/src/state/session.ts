@@ -71,7 +71,7 @@ export function adoptOldAnswers(s: SessionState): SessionState {
 export const setupOf = (s: SessionState): AircraftSetup => (s.aircraftId && s.byAircraft[s.aircraftId]) || EMPTY_SETUP
 
 export function draftSetup(s: SessionState, id = s.aircraftId!): AircraftSetup {
-  s.byAircraft[id] ??= { entries: [], modifiers: null, modifiersBase: null, modifiersChanged: false }
+  s.byAircraft[id] ??= { entries: [], modifiers: null, modifiersBase: null }
   return s.byAircraft[id]
 }
 

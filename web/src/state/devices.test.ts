@@ -302,7 +302,7 @@ describe('opening the DCS folder', () => {
     vi.stubGlobal('fetch', async (path: string) => {
       if (!loaded && path.endsWith('device.json')) {
         loaded = true
-        useSession.setState((s) => ({ byAircraft: { ...s.byAircraft, 'UH-1H': { entries: [entry({ uid: 'b' })], modifiers: null, modifiersBase: null, modifiersChanged: false } } }))
+        useSession.setState((s) => ({ byAircraft: { ...s.byAircraft, 'UH-1H': { entries: [entry({ uid: 'b' })], modifiers: null, modifiersBase: null } } }))
       }
       return new Response(readFileSync(resolve(repo, decodeURIComponent(path.slice(1)))))
     })

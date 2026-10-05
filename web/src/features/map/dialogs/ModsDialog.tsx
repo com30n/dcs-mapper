@@ -1,8 +1,8 @@
-import { dcsCompare, inputLabel, sameId } from '../../../dcs/combos'
+import { inputLabel, sameId } from '../../../dcs/combos'
 import { useWords } from '../../../i18n/i18n'
 import { deviceLabel } from '../../../state/lookup'
 import { closeDialog } from '../../../state/mapUi'
-import { editMods, openMods, ownerFor, ownersOf, removeModifier, renameModifier, saveModifier } from '../../../state/modifiers'
+import { editMods, modifierNames, openMods, ownerFor, ownersOf, removeModifier, renameModifier, saveModifier } from '../../../state/modifiers'
 import { commandsUsing, uiCombos } from '../../../state/problems'
 import { setupOf, type SessionState } from '../../../state/session'
 import type { Dialog } from '../../../state/types'
@@ -75,8 +75,6 @@ function Columns({ s }: { s: SessionState }) {
   const setup = setupOf(s)
   const all = setup.modifiers ?? {}
   const usesOf = (name: string) => setup.entries.reduce((n, e) => n + Object.values(e.wanted?.key ?? {}).flat().filter((c) => (c.reformers ?? []).includes(name)).length, 0)
-  const deviceNames = Object.keys(all).filter((n) => all[n].device !== 'Keyboard').sort(dcsCompare)
-  const keyboard = Object.keys(all).filter((n) => all[n].device === 'Keyboard').join(', ') || '—'
   const item = (name: string) => {
     const m = all[name]
     const uses = usesOf(name)
@@ -95,14 +93,17 @@ function Columns({ s }: { s: SessionState }) {
   }
   const column = (isSwitch: boolean) => {
     const kind = isSwitch ? 'switch' : 'modifier'
-    const names = deviceNames.filter((n) => !!all[n].switch === isSwitch)
+    const names = modifierNames(all).filter((n) => !!all[n].switch === isSwitch)
+    const mine = names.filter((n) => all[n].device !== 'Keyboard')
+    const keyboard = names.filter((n) => all[n].device === 'Keyboard')
     return (
       <section className={styles.column}>
         <h3>{t(isSwitch ? 'mods.switches' : 'mods.modifiers')}</h3>
         <span className="muted small">{t(isSwitch ? 'mods.switchesHint' : 'mods.modifiersHint')}</span>
-        {names.length ? names.map(item) : <p className={styles.emptyNote}>{t(isSwitch ? 'mods.noSwitches' : 'mods.noModifiers')}</p>}
-        {!isSwitch && <p className="muted small">{t('mods.keyboardList', { names: keyboard })}</p>}
+        {mine.length ? mine.map(item) : <p className={styles.emptyNote}>{t(isSwitch ? 'mods.noSwitches' : 'mods.noModifiers')}</p>}
         <Button tone="modifier" onClick={() => openMods({ adding: kind })}>{t(isSwitch ? 'mods.addSwitch' : 'mods.addModifier')}</Button>
+        {keyboard.length > 0 && <span className="eyebrow">{t('mods.keyboardList')}</span>}
+        {keyboard.map(item)}
       </section>
     )
   }

@@ -233,7 +233,7 @@
   "mods.switchesHint": "Press once to turn it on, again to turn it off.",
   "mods.noModifiers": "No modifiers on your devices yet.",
   "mods.noSwitches": "No switches yet.",
-  "mods.keyboardList": "Keyboard, usable with any device: {names}.",
+  "mods.keyboardList": "Keyboard · works with any device",
   "mods.keyboard": "Keyboard",
   "mods.addModifier": "Add modifier",
   "mods.addSwitch": "Add switch",

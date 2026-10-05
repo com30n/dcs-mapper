@@ -40,7 +40,6 @@ export interface AircraftSetup {
   entries: Entry[]
   modifiers: Modifiers | null
   modifiersBase: Modifiers | null
-  modifiersChanged: boolean
 }
 
 export interface Listening {
@@ -67,4 +66,4 @@ export interface TuneDraft {
   rest: Record<string, unknown>
 }
 
-export const EMPTY_SETUP: AircraftSetup = { entries: [], modifiers: null, modifiersBase: null, modifiersChanged: false }
+export const EMPTY_SETUP: AircraftSetup = { entries: [], modifiers: null, modifiersBase: null }
