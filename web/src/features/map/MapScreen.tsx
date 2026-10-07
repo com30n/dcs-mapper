@@ -79,7 +79,7 @@ function ColumnHeads({ s, columns }: { s: SessionState; columns: Column[] }) {
   const { t, tr } = useWords()
   const aircraft = tr(s.catalog!.name)
   return (
-    <div className={fields.heads} role="row">
+    <div ref={measureHeads} className={fields.heads} role="row">
       <div className={cx(fields.name, fields.headName)} role="columnheader"><span className="eyebrow">{t('map.command')}</span></div>
       {columns.map((column) => {
         const { entry, device, index, active } = column
@@ -270,7 +270,7 @@ export function MapScreen() {
           </div>
           <div className={styles.sections} role="table" aria-label={t('map.table')}>
             <div className={fields.table} style={tableStyle}>
-              <div ref={measureHeads}><ColumnHeads s={s} columns={columns} /></div>
+              <ColumnHeads s={s} columns={columns} />
               {search
                 ? <Section s={s} columns={columns} id="search" label={t('map.searchResults', { query: search })} all={searchResults(profile, search, tr)} collapsible={false} />
                 : shown.filter((c) => narrowed || open.includes(c.id)).map((c) => (
