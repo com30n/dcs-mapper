@@ -33,6 +33,11 @@ export function pickColumn(uid?: string) {
   if (index >= 0 && index !== s.active) selectEntry(index)
 }
 
+export function showPicture(uid: string) {
+  useMapUi.setState((m) => { m.hidden = m.hidden.filter((x) => x !== uid); m.hover = null })
+  pickColumn(uid)
+}
+
 export function listen(hash: string, kind: Kind, name: string, uid?: string) {
   pickColumn(uid)
   if (useMapUi.getState().listening?.hash === hash) return useMapUi.setState({ drawer: true, hover: null })

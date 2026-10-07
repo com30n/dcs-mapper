@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { assign, carry, listen, press, pressKey, removeCombo, saveTune, selectEntry, why } from './bindings'
+import { assign, carry, listen, press, pressKey, showPicture, removeCombo, saveTune, selectEntry, why } from './bindings'
 import { hoverKeys, unhover, useMapUi } from './mapUi'
 import { comboId, KEYBOARD_MODIFIERS } from '../dcs/combos'
 import type { Bindings, Combo, Kind } from '../dcs/types'
@@ -224,5 +224,14 @@ describe('the picture of the binding pointed at', () => {
     hoverKeys('pedals', ['JOY_BTN1'])
     listen(trim.hash, 'key', 'Trim', 'stick')
     expect(useMapUi.getState().hover).toBeNull()
+  })
+})
+
+describe('switching the picture from the device chips', () => {
+  it('shows the picture of the device and brings its column back', () => {
+    useSession.setState(session([entry(), entry({ uid: 'pedals', dcsId: PEDALS })]))
+    useMapUi.setState({ hidden: ['pedals'], hover: { uid: 'stick', keys: [] } })
+    showPicture('pedals')
+    expect([useSession.getState().active, useMapUi.getState().hidden, useMapUi.getState().hover]).toEqual([1, [], null])
   })
 })
