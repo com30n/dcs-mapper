@@ -8,7 +8,7 @@ import { useWords } from '../../i18n/i18n'
 import { press } from '../../state/bindings'
 import { useMapUi } from '../../state/mapUi'
 import { keyState, type KeyKind } from '../../state/problems'
-import type { SessionState } from '../../state/session'
+import { setupOf, type SessionState } from '../../state/session'
 import type { Entry } from '../../state/types'
 import { layoutCallouts, leader, wrapText } from '../../ui/callouts'
 import { cx } from '../../ui/cx'
@@ -102,14 +102,19 @@ function CalloutView({ device, frame, info, callouts, focus }: CalloutViewProps)
 
 export function MapPicture({ s, entry, highlight }: { s: SessionState; entry: Entry; highlight: Set<string> }) {
   const { t, tr, trUi } = useWords()
-  const { listening, focus, adding } = useMapUi(useShallow((m) => ({ listening: m.listening, focus: m.focus, adding: m.adding })))
+  const ui = useMapUi(useShallow((m) => ({ listening: m.listening, focus: m.focus, adding: m.adding, hover: m.hover })))
   const device = s.devices[entry.deviceId]
   const builtIn = isBuiltIn(device)
   if (!device.views.length && !builtIn) return <Notice as="p">{t('map.noPicture')}</Notice>
+  const active = setupOf(s).entries[s.active] === entry
+  const listening = active ? ui.listening : null
+  const focus = active ? ui.focus : null
+  const adding = active ? ui.adding : []
+  const hovered = ui.hover?.uid === entry.uid ? ui.hover.keys : []
   const listened = listening ? (entry.wanted![listening.kind][listening.hash] ?? []).map((c) => c.key) : []
   const info = (input: string): MarkInfo => {
     const { using, modifier, ui, kind } = keyState(s, entry, input)
-    const selected = focus === input || listened.includes(input) || (!!modifier && adding.includes(modifier))
+    const selected = focus === input || hovered.includes(input) || listened.includes(input) || (!!modifier && adding.includes(modifier))
     const lit = highlight.has(input) && !selected
     const parts = [
       modifier ? t('map.modifierShort', { name: modifier }) : '',
@@ -121,14 +126,14 @@ export function MapPicture({ s, entry, highlight }: { s: SessionState; entry: En
     const title = [needs, lit ? t('map.inOpen') : '', inputLabel(input), ...(parts.length ? parts : [t('map.free')])].filter(Boolean).join(' — ')
     return { kind: selected ? 'sel' : kind, lit, wrong, title }
   }
-  const callouts = (input: string) => (input === focus || (highlight.has(input) && !listening) ? keyLines(s, entry, input) : null)
+  const callouts = (input: string) => (input === focus || hovered.includes(input) || (highlight.has(input) && !listening) ? keyLines(s, entry, input) : null)
   return (
     <>
       {builtIn && <BuiltInPicture role={device.role} info={info} />}
       {device.views.map((view, i) => (
         <Fragment key={i}>
           {device.views.length > 1 && <span className="eyebrow">{view.name}</span>}
-          <CalloutView device={device} frame={view} info={info} callouts={callouts} focus={focus} />
+          <CalloutView device={device} frame={view} info={info} callouts={callouts} focus={hovered[0] ?? focus} />
         </Fragment>
       ))}
       <div className={styles.legend}>

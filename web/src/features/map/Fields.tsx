@@ -5,8 +5,8 @@ import type { Profile } from '../../dcs/types'
 import type { Device } from '../../data/types'
 import { useWords } from '../../i18n/i18n'
 import { carry, listen, pickColumn, removeCombo, why } from '../../state/bindings'
-import { useMapUi } from '../../state/mapUi'
-import { comboIssue, issueText } from '../../state/problems'
+import { hoverKeys, unhover, useMapUi } from '../../state/mapUi'
+import { comboIssue, comboKeys, issueText } from '../../state/problems'
 import type { SessionState } from '../../state/session'
 import type { Entry } from '../../state/types'
 import { cx } from '../../ui/cx'
@@ -78,7 +78,8 @@ function Cell({ s, column, item, section }: { s: SessionState; column: Column; i
         const about = `${name} · ${comboText(combo)} · ${device.name}`
         return (
           <Fragment key={comboId(combo)}>
-            <div className={styles.slotRow}>
+            <div className={styles.slotRow} onMouseEnter={() => hoverKeys(entry.uid, comboKeys(s, entry, combo))} onMouseLeave={() => unhover(entry.uid)}
+              onFocus={() => hoverKeys(entry.uid, comboKeys(s, entry, combo))} onBlur={() => unhover(entry.uid)}>
               <button type="button" className={cx(styles.field, state && styles[state])} title={`${name} · ${device.name}`} onClick={pick}>{comboText(combo)}</button>
               {kind === 'axis' && (
                 <IconButton tone="blue" className={cx(!isDefaultFilter(combo.filter) && styles.tuned)} label={`${t('tune.button')}: ${about}`} hint={t('tune.hint')}

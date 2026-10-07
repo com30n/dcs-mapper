@@ -1,5 +1,5 @@
 import i18n from 'i18next'
-import { sameCombo } from '../dcs/combos'
+import { sameCombo, sameId } from '../dcs/combos'
 import { KINDS, type Bindings, type Combo, type Command, type Kind } from '../dcs/types'
 import { trUi } from '../i18n/i18n'
 import { entryProfile, uiProfile } from './lookup'
@@ -33,6 +33,12 @@ export function uiCombos(s: SessionState, entry: Entry): UiCombo[] {
 
 export const modifierOn = (s: SessionState, entry: Entry, key: string) =>
   Object.entries(setupOf(s).modifiers ?? {}).find(([, m]) => m.key === key && m.device === entry.dcsId)?.[0]
+
+export function comboKeys(s: SessionState, entry: Entry, combo: Combo) {
+  const modifiers = setupOf(s).modifiers ?? {}
+  const held = (combo.reformers ?? []).flatMap((name) => (modifiers[name] && sameId(modifiers[name].device, entry.dcsId) ? [modifiers[name].key] : []))
+  return [combo.key, ...held]
+}
 
 export function comboIssue(s: SessionState, entry: Entry, combo: Combo, hash?: string): Issue | null {
   if (hash && entry.dead.includes(hash)) return { code: 'dead' }

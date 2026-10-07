@@ -148,7 +148,7 @@ export function MapScreen() {
   useWatchPads()
   const { t, tr } = useWords()
   const s = useSession()
-  const ui = useMapUi(useShallow((m) => ({ filter: m.filter, open: m.open, search: m.search, toast: m.toast, toastAction: m.toastAction, drawer: m.drawer, listening: m.listening, hidden: m.hidden, dock: m.dock })))
+  const ui = useMapUi(useShallow((m) => ({ filter: m.filter, open: m.open, search: m.search, toast: m.toast, toastAction: m.toastAction, drawer: m.drawer, listening: m.listening, hidden: m.hidden, dock: m.dock, hover: m.hover })))
   usePrepared()
   useKeyCapture(!!ui.listening && s.devices[setupOf(s).entries[s.active]?.deviceId ?? '']?.role === 'keyboard')
   const navigate = useNavigate()
@@ -183,7 +183,8 @@ export function MapScreen() {
   const mapped = shownEntries.reduce((n, e) => n + Object.keys(e.wanted!.key).length + Object.keys(e.wanted!.axis).length, 0)
   const aircraft = tr(s.catalog!.name)
   const search = ui.search.trim()
-  const device = column.device
+  const shownEntry = entries.find((e) => e.uid === ui.hover?.uid && e.wanted) ?? activeEntry
+  const device = s.devices[shownEntry.deviceId]
 
   const toggle = (id: string) => {
     if (narrowed) useMapUi.setState({ scrollTo: id, search: '' })
@@ -194,8 +195,8 @@ export function MapScreen() {
 
   const listed = search ? searchResults(profile, search, tr)
     : shown.filter((c) => narrowed || open.includes(c.id)).flatMap((c) => tableItems(s, shownEntries, commandsIn(profile, c, tr), ui.filter))
-  const highlight = new Set(listed.flatMap(({ command, kind }) => (activeEntry.wanted![kind][command.hash] ?? []).map((c) => c.key)))
-  const picture = <MapPicture s={s} entry={activeEntry} highlight={highlight} />
+  const highlight = new Set(listed.flatMap(({ command, kind }) => (shownEntry.wanted![kind][command.hash] ?? []).map((c) => c.key)))
+  const picture = <MapPicture s={s} entry={shownEntry} highlight={highlight} />
   const toast = ui.toast && (
     <div className={styles.toast} role="status">
       <span>{ui.toast}</span>
@@ -263,7 +264,7 @@ export function MapScreen() {
             <h1 id="map-title" className="sr">{t('step.map')}</h1>
             <div className={styles.howto}>
               <span><b>1</b>{t('map.how1')}</span><span><b>2</b>{t('map.how2')}</span><span className="muted">{t('map.how3')}</span>
-              <Button variant="link" small className={styles.push} onClick={() => resetEntry(activeEntry.uid).catch(fail)}>{t('map.reset', { name: device.name })}</Button>
+              <Button variant="link" small className={styles.push} onClick={() => resetEntry(activeEntry.uid).catch(fail)}>{t('map.reset', { name: column.device.name })}</Button>
             </div>
             <StatusCard s={s} entry={activeEntry} />
             {toast}
@@ -284,7 +285,7 @@ export function MapScreen() {
         </section>
         <aside className={styles.dock} aria-label={t('map.picture')}>
           <div className={styles.drawerHead}>
-            <div><span className="eyebrow">{t(`role.${device.role}`)} · {t('map.usedLast')}</span><h2>{device.name}</h2></div>
+            <div><span className="eyebrow">{t(`role.${device.role}`)} · {t(shownEntry === activeEntry ? 'map.usedLast' : 'map.pointedAt')}</span><h2>{device.name}</h2></div>
             <Button small onClick={() => useMapUi.setState({ dock: false })}><HideIcon />{t('map.hideDock')}</Button>
           </div>
           {picture}
