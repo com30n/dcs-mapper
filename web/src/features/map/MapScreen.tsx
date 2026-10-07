@@ -8,7 +8,7 @@ import { useWatchPads } from '../../gamepad/poll'
 import { gamepadsSupported, usePads } from '../../gamepad/store'
 import { useWords } from '../../i18n/i18n'
 import { fail } from '../../state/aircraft'
-import { pressKey, selectEntry } from '../../state/bindings'
+import { pressKey, selectEntry, showPicture } from '../../state/bindings'
 import { redo, undo } from '../../state/history'
 import { entryProfile, entryTemplate, isBuiltIn, padFor } from '../../state/lookup'
 import { cancel, useMapUi, type Filter } from '../../state/mapUi'
@@ -213,10 +213,13 @@ export function MapScreen() {
             const on = visible.includes(e)
             const d = s.devices[e.deviceId]
             return (
-              <button key={e.uid} type="button" className={styles.tab} aria-pressed={on} disabled={on && visible.length === 1} onClick={() => toggleShown(e.uid)}>
-                <span className={styles.tick}>{on && <TickIcon />}</span>
-                <span className="eyebrow">{t(`role.${d.role}`)}</span><span>{d.name}</span>
-              </button>
+              <span key={e.uid} className={cx(styles.tab, e === shownEntry && styles.pictured)} data-on={on}>
+                <button type="button" className={styles.tick} aria-pressed={on} disabled={on && visible.length === 1}
+                  aria-label={t('map.showColumn', { name: d.name })} title={t('map.showColumn', { name: d.name })} onClick={() => toggleShown(e.uid)}>{on && <TickIcon />}</button>
+                <button type="button" className={styles.tabName} aria-pressed={e === shownEntry} title={t('map.showPicture', { name: d.name })} onClick={() => showPicture(e.uid)}>
+                  <span className="eyebrow">{t(`role.${d.role}`)}</span><span>{d.name}</span>
+                </button>
+              </span>
             )
           })}
         </div>

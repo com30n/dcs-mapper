@@ -411,5 +411,6 @@
   "map.pickMouseNow": "Click the mouse button, the wheel or a movement on the picture.",
   "map.pictureHint.keyboard": "Every key of a full-size keyboard: the browser cannot tell which keys yours has. Hover a key to see its commands.",
   "map.pictureHint.mouse": "A five-button mouse: the browser cannot tell which buttons yours has. The left button stays for clicking in the cockpit.",
-  "map.pointedAt": "under the pointer"
+  "map.pointedAt": "under the pointer",
+  "map.showColumn": "Show the {name} in the table"
 }

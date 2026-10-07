@@ -17,7 +17,7 @@ import { Notice } from '../../ui/Notice'
 import { useWidth } from '../../ui/useWidth'
 import { isBuiltIn } from '../../state/lookup'
 import { BuiltInPicture } from './BuiltInPicture'
-import { keyLines, type KeyLine } from './keyLines'
+import { calloutShown, keyLines, type KeyLine } from './keyLines'
 import styles from './MapPicture.module.css'
 
 type MarkKind = KeyKind | 'sel'
@@ -126,7 +126,7 @@ export function MapPicture({ s, entry, highlight }: { s: SessionState; entry: En
     const title = [needs, lit ? t('map.inOpen') : '', inputLabel(input), ...(parts.length ? parts : [t('map.free')])].filter(Boolean).join(' — ')
     return { kind: selected ? 'sel' : kind, lit, wrong, title }
   }
-  const callouts = (input: string) => (input === focus || hovered.includes(input) || (highlight.has(input) && !listening) ? keyLines(s, entry, input) : null)
+  const callouts = (input: string) => (calloutShown(input, { focus, hovered, highlight }) ? keyLines(s, entry, input) : null)
   return (
     <>
       {builtIn && <BuiltInPicture role={device.role} info={info} />}
