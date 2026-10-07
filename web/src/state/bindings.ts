@@ -24,7 +24,7 @@ function edit(uid: string, change: (entry: Entry) => void) {
 }
 
 const waitFor = (listening: Listening) =>
-  useMapUi.setState({ listening, adding: [], addAxis: false, focus: null, flash: null, toast: null, toastAction: null, drawer: true })
+  useMapUi.setState({ listening, adding: [], addAxis: false, focus: null, flash: null, toast: null, toastAction: null, drawer: true, hover: null })
 
 export function pickColumn(uid?: string) {
   if (!uid) return
@@ -35,7 +35,7 @@ export function pickColumn(uid?: string) {
 
 export function listen(hash: string, kind: Kind, name: string, uid?: string) {
   pickColumn(uid)
-  if (useMapUi.getState().listening?.hash === hash) return useMapUi.setState({ drawer: true })
+  if (useMapUi.getState().listening?.hash === hash) return useMapUi.setState({ drawer: true, hover: null })
   waitFor({ hash, kind, name })
 }
 
@@ -45,7 +45,7 @@ export function selectEntry(index: number) {
   const { listening } = useMapUi.getState()
   const kept = listening && !listening.carry && to && entryProfile(s, to).commands[listening.kind].some((c) => c.hash === listening.hash)
   useSession.setState({ active: index })
-  useMapUi.setState({ listening: kept ? { ...listening } : null, focus: null, dialog: null })
+  useMapUi.setState({ listening: kept ? { ...listening } : null, focus: null, dialog: null, hover: null })
 }
 
 export const toggleAdding =(name: string) =>

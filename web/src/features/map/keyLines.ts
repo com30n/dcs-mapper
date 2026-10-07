@@ -24,3 +24,6 @@ export function keyLines(s: SessionState, entry: Entry, key: string): KeyLine[] 
   }
   return lines.length ? lines : [{ text: i18n.t('legend.free'), tone: 'free' }]
 }
+
+export const calloutShown = (input: string, { focus, hovered, highlight }: { focus: string | null; hovered: string[]; highlight: Set<string> }) =>
+  input === focus || hovered.includes(input) || highlight.has(input)

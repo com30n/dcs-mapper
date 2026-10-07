@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { assign, carry, listen, press, pressKey, removeCombo, saveTune, selectEntry, why } from './bindings'
-import { useMapUi } from './mapUi'
+import { hoverKeys, unhover, useMapUi } from './mapUi'
 import { comboId, KEYBOARD_MODIFIERS } from '../dcs/combos'
 import type { Bindings, Combo, Kind } from '../dcs/types'
 import { catalog, entry, session, STICK } from './session.fixture'
@@ -207,5 +207,22 @@ describe('binding keys of the keyboard', () => {
     useMapUi.setState({ listening: { hash: trim.hash, kind: 'key', name: 'Trim' }, adding: [], addAxis: false })
     pressKey('LCtrl', ['LCtrl'])
     expect([keyboard()[trim.hash], useMapUi.getState().listening?.hash]).toEqual([undefined, trim.hash])
+  })
+})
+
+describe('the picture of the binding pointed at', () => {
+  const trim = catalog.commands.key[0]
+
+  it('stays on the last device pointed at when the pointer leaves', () => {
+    hoverKeys('pedals', ['JOY_BTN1'])
+    unhover('pedals')
+    expect(useMapUi.getState().hover).toEqual({ uid: 'pedals', keys: [] })
+  })
+
+  it('goes back to the column being bound', () => {
+    useSession.setState(session([entry(), entry({ uid: 'pedals', dcsId: PEDALS })]))
+    hoverKeys('pedals', ['JOY_BTN1'])
+    listen(trim.hash, 'key', 'Trim', 'stick')
+    expect(useMapUi.getState().hover).toBeNull()
   })
 })
