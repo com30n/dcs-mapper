@@ -5,6 +5,7 @@ import { RouterProvider } from 'react-router/dom'
 import { makeRouter } from './app/router'
 import { startPolling } from './gamepad/poll'
 import { initI18n } from './i18n/i18n'
+import { HintProvider } from './ui/IconButton'
 import { boot } from './state/aircraft'
 
 const root = document.getElementById('root')!
@@ -13,6 +14,6 @@ initI18n()
   .then(boot)
   .then(() => {
     startPolling()
-    createRoot(root).render(<StrictMode><RouterProvider router={makeRouter()} /></StrictMode>)
+    createRoot(root).render(<StrictMode><HintProvider><RouterProvider router={makeRouter()} /></HintProvider></StrictMode>)
   })
   .catch((error: Error) => { root.textContent = `Failed to start: ${error.message}` })

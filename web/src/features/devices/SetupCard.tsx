@@ -2,7 +2,7 @@ import { gamepadsSupported, usePads } from '../../gamepad/store'
 import { useWords } from '../../i18n/i18n'
 import { fail } from '../../state/aircraft'
 import { changePicture, removeDevice, setDcsId, setPresetFile, setStart, turnOff } from '../../state/devices'
-import { candidatesFor, configFile, entryTemplate, matchingIds, padFor, presetFor, undecided } from '../../state/lookup'
+import { candidatesFor, configFile, entryTemplate, isBuiltIn, matchingIds, padFor, presetFor, undecided, userDiffPath } from '../../state/lookup'
 import { useMapUi } from '../../state/mapUi'
 import type { SessionState } from '../../state/session'
 import type { Entry, Start } from '../../state/types'
@@ -38,7 +38,12 @@ function StartOptions({ s, entry }: { s: SessionState; entry: Entry }) {
   const { t, tr } = useWords()
   const preset = presetFor(s, entry)
   const current = !!s.folder && !!configFile(s, entry.dcsId)
-  const options: [Start, string, string, boolean][] = [
+  const builtIn = isBuiltIn(s.devices[entry.deviceId])
+  const options: [Start, string, string, boolean][] = builtIn ? [
+    ['current', t('devices.start.current'), current ? t('devices.start.currentHint', { folder: s.catalog!.folder }) : t('devices.start.dcsDefaults'), false],
+    ['file', t('devices.start.file'), entry.fileName ?? t('devices.start.fileHint'), false],
+    ['empty', t('devices.start.empty'), t('devices.start.emptyBuiltIn'), false],
+  ] : [
     ['preset', t('devices.start.preset'), preset
       ? t('devices.start.presetHint', { count: Object.keys(preset.keyDiffs ?? {}).length + Object.keys(preset.axisDiffs ?? {}).length })
       : t('devices.start.noPreset', { aircraft: tr(s.catalog!.name) }), !preset],
@@ -66,9 +71,29 @@ function StartOptions({ s, entry }: { s: SessionState; entry: Entry }) {
   )
 }
 
+function BuiltInCard({ s, entry }: { s: SessionState; entry: Entry }) {
+  const { t } = useWords()
+  const device = s.devices[entry.deviceId]
+  return (
+    <article id={entry.uid} className={styles.setup}>
+      <div className={styles.head}>
+        <div className="stack"><span className="eyebrow">{t('link.builtIn')}</span><strong>{device.name}</strong></div>
+        <Button variant="icon" aria-label={t('devices.remove')} className={styles.push} onClick={() => removeDevice(entry.uid)}>×</Button>
+      </div>
+      <dl className={styles.facts}>
+        <dt>{t('devices.dcsId')}</dt><dd>{t('devices.builtIn.noId', { name: entry.dcsId })}</dd>
+        <dt>{t('link.title')}</dt><dd>{t(`devices.builtIn.noLink.${device.role}`)}</dd>
+        <dt>{t('devices.builtIn.saved')}</dt><dd className="mono small">{userDiffPath(s, entry).replace(/\//g, '\\')}</dd>
+      </dl>
+      <StartOptions s={s} entry={entry} />
+    </article>
+  )
+}
+
 export function SetupCard({ s, entry }: { s: SessionState; entry: Entry }) {
   const { t } = useWords()
   const device = s.devices[entry.deviceId]
+  if (isBuiltIn(device)) return <BuiltInCard s={s} entry={entry} />
   const ids = matchingIds(s, device)
   const idState = entry.dcsId.includes('{') ? (ids.includes(entry.dcsId) ? 'matched' : 'typed') : 'missing'
   const name = entryTemplate(s, entry)

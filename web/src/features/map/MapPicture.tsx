@@ -15,6 +15,8 @@ import { cx } from '../../ui/cx'
 import { DevicePicture, type PlacedMark } from '../../ui/DevicePicture'
 import { Notice } from '../../ui/Notice'
 import { useWidth } from '../../ui/useWidth'
+import { isBuiltIn } from '../../state/lookup'
+import { BuiltInPicture } from './BuiltInPicture'
 import { keyLines, type KeyLine } from './keyLines'
 import styles from './MapPicture.module.css'
 
@@ -29,7 +31,7 @@ const TONE = { plain: styles.tonePlain, modifier: styles.toneModifier, ui: style
 
 export const Dot = ({ kind }: { kind: MarkKind }) => <i className={cx(styles.dot, styles[kind])} />
 
-interface MarkInfo {
+export interface MarkInfo {
   kind: MarkKind
   lit: boolean
   wrong: boolean
@@ -102,7 +104,8 @@ export function MapPicture({ s, entry, highlight }: { s: SessionState; entry: En
   const { t, tr, trUi } = useWords()
   const { listening, focus, adding } = useMapUi(useShallow((m) => ({ listening: m.listening, focus: m.focus, adding: m.adding })))
   const device = s.devices[entry.deviceId]
-  if (!device.views.length) return <Notice as="p">{t('map.noPicture')}</Notice>
+  const builtIn = isBuiltIn(device)
+  if (!device.views.length && !builtIn) return <Notice as="p">{t('map.noPicture')}</Notice>
   const listened = listening ? (entry.wanted![listening.kind][listening.hash] ?? []).map((c) => c.key) : []
   const info = (input: string): MarkInfo => {
     const { using, modifier, ui, kind } = keyState(s, entry, input)
@@ -121,6 +124,7 @@ export function MapPicture({ s, entry, highlight }: { s: SessionState; entry: En
   const callouts = (input: string) => (input === focus || (highlight.has(input) && !listening) ? keyLines(s, entry, input) : null)
   return (
     <>
+      {builtIn && <BuiltInPicture role={device.role} info={info} />}
       {device.views.map((view, i) => (
         <Fragment key={i}>
           {device.views.length > 1 && <span className="eyebrow">{view.name}</span>}
@@ -133,7 +137,7 @@ export function MapPicture({ s, entry, highlight }: { s: SessionState; entry: En
         ))}
         <span><i className={cx(styles.dot, styles.used, styles.lit)} />{t('legend.open')}</span>
       </div>
-      <p className="muted small">{t('map.pictureHint')}</p>
+      <p className="muted small">{t(builtIn ? `map.pictureHint.${device.role}` : 'map.pictureHint')}</p>
     </>
   )
 }

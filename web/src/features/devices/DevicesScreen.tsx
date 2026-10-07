@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router'
 import { sameId, templateOf } from '../../dcs/combos'
 import { useWords } from '../../i18n/i18n'
 import { fail } from '../../state/aircraft'
-import { addFiles, toggleDevice, turnOn } from '../../state/devices'
+import { addFiles, toggleBuiltIn, toggleDevice, turnOn } from '../../state/devices'
+import { BUILT_IN } from '../../folder/scan'
 import { connectFolder } from '../../state/folder'
 import { setupOf, useSession, type SessionState } from '../../state/session'
 import { Button, Chip, Chips } from '../../ui/Button'
@@ -11,7 +12,7 @@ import cards from '../../ui/Card.module.css'
 import { cx } from '../../ui/cx'
 import { DeviceThumb } from '../../ui/DevicePicture'
 import { Footer } from '../../ui/Footer'
-import { ArrowIcon } from '../../ui/icons'
+import { ArrowIcon, KeyboardIcon, MouseIcon } from '../../ui/icons'
 import { Notice } from '../../ui/Notice'
 import { Page } from '../../ui/Page'
 import { SearchField } from '../../ui/SearchField'
@@ -82,6 +83,7 @@ export function DevicesScreen() {
   const [role, setRole] = useState<(typeof ROLES)[number]>('all')
   const entries = setupOf(s).entries
   const added = new Set(entries.map((e) => e.deviceId))
+  const builtIn = BUILT_IN.filter((name) => s.catalog?.profiles[name])
   const query = search.toLowerCase()
   const library = s.library.filter((d) => (role === 'all' || d.role === role) && `${d.name} ${d.dcsName}`.toLowerCase().includes(query))
   return (
@@ -95,6 +97,26 @@ export function DevicesScreen() {
               <Chips>{ROLES.map((r) => <Chip key={r} pressed={role === r} onClick={() => setRole(r)}>{t(`devices.filter.${r}`)}</Chip>)}</Chips>
             </div>
             <p className="muted small">{t('devices.pickHint')}</p>
+            {builtIn.length > 0 && (
+              <>
+                <span className="eyebrow">{t('link.builtIn')}</span>
+                <div className={cards.grid}>
+                  {builtIn.map((name) => {
+                    const on = entries.some((e) => e.dcsId === name)
+                    const role = name.toLowerCase()
+                    return (
+                      <button key={name} type="button" className={cx(cards.card, styles.pick, on && styles.picked)} aria-pressed={on} onClick={() => toggleBuiltIn(name)}>
+                        <span className={styles.builtInIcon}>{role === 'keyboard' ? <KeyboardIcon /> : <MouseIcon />}</span>
+                        <span className="eyebrow">{t('link.builtIn')}</span>
+                        <span className={cards.title}>{t(`role.${role}`)}</span>
+                        <span className="small">{t(`devices.builtIn.${role}`)}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+                <span className="eyebrow">{t('devices.library')}</span>
+              </>
+            )}
             <div className={cards.grid}>
               {library.map((d) => (
                 <button key={d.id} type="button" className={cx(cards.card, styles.pick, added.has(d.id) && styles.picked)} aria-pressed={added.has(d.id)}

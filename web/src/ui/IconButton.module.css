@@ -1,0 +1,7 @@
+.button { flex: none; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); }
+.button:hover { border-color: var(--ink-2); }
+.button:disabled { opacity: 0.45; cursor: not-allowed; }
+.blue { color: var(--blue); border-color: var(--blue-line); }
+.warn { color: var(--warn-text); border-color: var(--warn-line); }
+.hint { z-index: 50; max-width: 280px; padding: 8px 12px; border-radius: 8px; background: var(--ink); color: #fff; font: 600 14px/1.35 var(--sans); box-shadow: 0 8px 24px rgba(20, 24, 30, 0.2); }
+.arrow { fill: var(--ink); }

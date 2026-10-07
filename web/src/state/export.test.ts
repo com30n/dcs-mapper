@@ -18,6 +18,11 @@ describe('files to write', () => {
     expect(skipped.map((e) => e.uid)).toEqual(['other'])
   })
 
+  it('writes the keyboard and the mouse into their own folders, as DCS does', () => {
+    const s = session([entry({ uid: 'kb', dcsId: 'Keyboard', uiChanged: true }), entry({ uid: 'mouse', dcsId: 'Mouse' })])
+    expect(exportFiles(s).files.map(([path]) => path)).toEqual(['F-16C_50/keyboard/Keyboard.diff.lua', 'UiLayer/keyboard/Keyboard.diff.lua', 'F-16C_50/mouse/Mouse.diff.lua'])
+  })
+
   it('adds modifiers.lua and the menu layer only when they changed', () => {
     const modifiers = { ...KEYBOARD_MODIFIERS, Shift: { device: STICK, key: 'JOY_BTN10', switch: true } }
     const s = session([entry({ uiChanged: true })], modifiers)

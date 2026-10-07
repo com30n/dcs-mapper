@@ -58,12 +58,13 @@ export function StatusCard({ s, entry }: { s: SessionState; entry: Entry }) {
   }
   if (listening) {
     const axis = listening.kind === 'axis'
+    const role = s.devices[entry.deviceId]?.role
     const here = axis ? (entry.wanted![listening.kind][listening.hash] ?? []).map(comboText).join(', ') : ''
     return (
       <div className={cx(styles.status, styles.listening)} role="status">
         <span className="eyebrow">{t(axis ? 'map.waitingAxis' : 'map.waitingButton')}</span>
         <strong>{listening.name}</strong>
-        <span className={styles.listenText}>{t(axis ? 'map.moveAxisNow' : 'map.pressButtonNow')}</span>
+        <span className={styles.listenText}>{t(role === 'keyboard' ? 'map.pressKeyNow' : role === 'mouse' ? 'map.pickMouseNow' : axis ? 'map.moveAxisNow' : 'map.pressButtonNow')}</span>
         <div className={styles.pickMods}>
           <span>{t('map.modsForBinding')}</span>
           <Chips>
@@ -101,7 +102,7 @@ export function StatusCard({ s, entry }: { s: SessionState; entry: Entry }) {
     const example = `${modifierNames(modifiers)[0] ?? 'LAlt'} + ${inputLabel(focus)}`
     lines.push(<li key="needs" className="muted small">{t('map.uiNeedsModifier', { input: inputLabel(focus), example })}</li>)
   }
-  const modifierButton = isAxisKey(focus) || !entry.dcsId ? null
+  const modifierButton = isAxisKey(focus) || !entry.dcsId.includes('{') ? null
     : modifier ? <Button small onClick={() => removeModifier(modifier)}>{t('map.dropModifier')}</Button>
       : <Button small onClick={() => openMods({ adding: 'modifier', device: entry.dcsId, key: focus })}>{t('map.makeModifier')}</Button>
   return (

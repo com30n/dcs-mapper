@@ -18,6 +18,8 @@ const folder = savedGames({
   [`Config/Input/su-25T/joystick/${STICK}.diff.lua`]: 'local diff = {} return diff',
   [`Config/Input/su-25T/joystick/${HANDBRAKE}.diff.lua`]: 'local diff = {} return diff',
   'Config/Input/su-25T/joystick/MOZA AB9 FFB Base.diff.lua': 'local diff = {} return diff',
+  'Config/Input/su-25T/keyboard/Keyboard.diff.lua': 'local diff = {} return diff',
+  'Config/Input/Su-30SM/mouse/Mouse.diff.lua': 'local diff = {} return diff',
   'Config/Input/su-25T/modifiers.lua': 'local modifiers = {} return modifiers',
   'Config/Input/disabled.lua': `local disabled = {\n\t["devices"] = {\n\t\t["${HANDBRAKE}"] = true,\n\t},\n\t["pnp"] = false,\n}\nreturn disabled`,
   'Logs/dcs.log': `INPUT (Main): created [MOZA AB9 FFB Base] with full id [${STICK}],FFB`,
@@ -29,6 +31,10 @@ describe('reading Saved Games\\DCS', () => {
     const scan = await scanFolder(folder)
     expect(scan.aircraft.sort()).toEqual(['F-16C_50', 'su-25T'])
     expect(scan.bindings['su-25T'].sort()).toEqual([HANDBRAKE, STICK].sort())
+  })
+
+  it('notes the aircraft with keyboard and mouse files', async () => {
+    expect((await scanFolder(folder)).builtIn).toEqual({ 'su-25T': ['Keyboard'], 'Su-30SM': ['Mouse'] })
   })
 
   it('names each device once, as dcs.log writes it, whatever the case in the files', async () => {

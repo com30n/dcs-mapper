@@ -1,82 +1,94 @@
 import { Fragment, useEffect, useRef } from 'react'
 import { isDefaultFilter } from '../../dcs/axis'
 import { comboId, comboText } from '../../dcs/combos'
+import type { Profile } from '../../dcs/types'
+import type { Device } from '../../data/types'
 import { useWords } from '../../i18n/i18n'
-import { carry, listen, removeCombo, why } from '../../state/bindings'
+import { carry, listen, pickColumn, removeCombo, why } from '../../state/bindings'
 import { useMapUi } from '../../state/mapUi'
 import { comboIssue, issueText } from '../../state/problems'
 import type { SessionState } from '../../state/session'
 import type { Entry } from '../../state/types'
-import { Button } from '../../ui/Button'
 import { cx } from '../../ui/cx'
-import { filterItems, groupRows, isMapped, type Item, type Slot } from './tree'
+import { IconButton } from '../../ui/IconButton'
+import { ClearIcon, CopyIcon, MoveIcon, TuneIcon } from '../../ui/icons'
+import { commandOf, groupRows, isMapped, tableItems, type Item } from './tree'
 import styles from './Fields.module.css'
 import { openTune } from './dialogs/open'
 import map from './Map.module.css'
 
-function Field({ s, entry, slot, section }: { s: SessionState; entry: Entry; slot: Slot; section: string }) {
+export interface Column {
+  entry: Entry
+  index: number
+  active: boolean
+  profile: Profile
+  device: Device
+}
+
+function OffCell({ text, title }: { text: string; title?: string }) {
+  return <div className={styles.cell} role="cell"><span className={cx(styles.field, styles.off)} title={title}>{text}</span></div>
+}
+
+function Cell({ s, column, item, section }: { s: SessionState; column: Column; item: Item; section: string }) {
   const { t, tr } = useWords()
-  const { command, kind } = slot
-  const combos = entry.wanted![kind][command.hash] ?? []
-  const active = useMapUi((m) => m.listening?.hash === command.hash)
-  const addAxis = useMapUi((m) => m.listening?.hash === command.hash && m.addAxis)
-  const focus = useMapUi((m) => (combos.some((c) => c.key === m.focus) ? m.focus : null))
-  const flash = useMapUi((m) => m.flash === command.hash)
-  const scrollHere = useMapUi((m) => m.scrollTo === `${section}|${command.hash}`)
+  const { entry, active, device } = column
+  const { kind } = item
+  const hash = item.command.hash
+  const combos = entry.wanted![kind][hash] ?? []
+  const listening = useMapUi((m) => active && m.listening?.hash === hash)
+  const addAxis = useMapUi((m) => active && m.listening?.hash === hash && m.addAxis)
+  const focus = useMapUi((m) => (active && combos.some((c) => c.key === m.focus) ? m.focus : null))
+  const flash = useMapUi((m) => active && m.flash === hash)
+  const scrollHere = useMapUi((m) => active && m.scrollTo === `${section}|${hash}`)
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!scrollHere) return
-    ref.current?.scrollIntoView({ block: 'center' })
+    ref.current?.scrollIntoView({ block: 'center', inline: 'nearest' })
     useMapUi.setState({ scrollTo: null })
   }, [scrollHere])
-  const label = (
-    <span className={styles.slotLabel}>
-      {slot.position || t('map.action')}{kind === 'axis' && <span className={styles.axisTag}>{t('map.axisTag')}</span>}
-    </span>
-  )
+  const command = commandOf(column.profile, kind, hash)
+  if (device.role === 'keyboard' && kind === 'axis') return <OffCell text={t('map.noKeyboardAxes')} title={t('map.notOfferedHint', { device: device.name })} />
+  if (!command) return <OffCell text={t('map.notOffered')} title={t('map.notOfferedHint', { device: device.name })} />
   if (command.joystick === false) {
-    return (
-      <div className={styles.slot}>{label}
-        <div className={styles.slotRow}><span className={cx(styles.field, styles.off)} title={t('map.notForJoystick')}>{t('map.notForJoystickShort')}</span></div>
-      </div>
-    )
+    if (device.role === 'keyboard' || device.role === 'mouse') {
+      return <OffCell text={t('map.notOffered')} title={t('map.notOfferedHint', { device: device.name })} />
+    }
+    return <OffCell text={t('map.notForJoystickShort')} title={t('map.notForJoystick')} />
   }
-  const hash = command.hash
   const name = tr(command.name)
-  const pick = () => listen(hash, kind, name)
-  if (active || !combos.length) {
+  const pick = () => listen(hash, kind, name, entry.uid)
+  if (listening || !combos.length) {
     const bound = combos.map(comboText).join(', ')
-    const waiting = addAxis && bound ? `${bound}, …` : t(kind === 'axis' ? 'map.moveAxisShort' : 'map.pressShort')
+    const waiting = addAxis && bound ? `${bound}, …` : t(device.role === 'mouse' ? 'map.pickMouseShort' : device.role === 'keyboard' ? 'map.pressKeyShort' : kind === 'axis' ? 'map.moveAxisShort' : 'map.pressShort')
     return (
-      <div ref={ref} className={styles.slot}>{label}
+      <div ref={ref} className={styles.cell} role="cell">
         <div className={styles.slotRow}>
-          <button type="button" className={cx(styles.field, active ? styles.listen : styles.empty)} title={name} onClick={pick}>
-            {active ? waiting : t(kind === 'axis' ? 'map.assignAxis' : 'map.assignButton')}
+          <button type="button" className={cx(styles.field, listening ? styles.listen : styles.empty)} title={`${name} · ${device.name}`} onClick={pick}>
+            {listening ? waiting : t(kind === 'axis' ? 'map.assignAxis' : device.role === 'keyboard' ? 'map.assignKey' : 'map.assignButton')}
           </button>
         </div>
       </div>
     )
   }
   return (
-    <div ref={ref} className={styles.slot}>{label}
+    <div ref={ref} className={styles.cell} role="cell">
       {combos.map((combo, i) => {
         const issue = comboIssue(s, entry, combo, hash)
         const state = issue ? 'warn' : flash ? 'flash' : combo.key === focus ? 'focus' : null
-        const about = `${name} · ${comboText(combo)}`
+        const about = `${name} · ${comboText(combo)} · ${device.name}`
         return (
           <Fragment key={comboId(combo)}>
             <div className={styles.slotRow}>
-              <button type="button" className={cx(styles.field, state && styles[state])} title={name} onClick={pick}>{comboText(combo)}</button>
+              <button type="button" className={cx(styles.field, state && styles[state])} title={`${name} · ${device.name}`} onClick={pick}>{comboText(combo)}</button>
               {kind === 'axis' && (
-                <Button small tone="blue" className={styles.tune} title={t('tune.hint')} onClick={() => openTune(entry, hash, i)}>
-                  {t('tune.button')}{isDefaultFilter(combo.filter) ? '' : ' ●'}
-                </Button>
+                <IconButton tone="blue" className={cx(!isDefaultFilter(combo.filter) && styles.tuned)} label={`${t('tune.button')}: ${about}`} hint={t('tune.hint')}
+                  onClick={() => { pickColumn(entry.uid); openTune(entry, hash, i) }}><TuneIcon /></IconButton>
               )}
-              <Button small aria-label={`${t('map.copy')}: ${about}`} onClick={() => carry(kind, hash, name, combo, 'copy')}>{t('map.copy')}</Button>
-              <Button small aria-label={`${t('map.move')}: ${about}`} onClick={() => carry(kind, hash, name, combo, 'move')}>{t('map.move')}</Button>
-              <Button small tone="warn" aria-label={`${t('map.clearOne')}: ${about}`} onClick={() => removeCombo(kind, hash, comboId(combo), name)}>{t('map.clearOne')}</Button>
+              <IconButton label={`${t('map.copy')}: ${about}`} hint={t('map.copyHint')} onClick={() => carry(kind, hash, name, combo, 'copy', entry.uid)}><CopyIcon /></IconButton>
+              <IconButton label={`${t('map.move')}: ${about}`} hint={t('map.moveHint')} onClick={() => carry(kind, hash, name, combo, 'move', entry.uid)}><MoveIcon /></IconButton>
+              <IconButton tone="warn" label={`${t('map.clearOne')}: ${about}`} hint={t('map.clearHint')} onClick={() => removeCombo(kind, hash, comboId(combo), name, entry.uid)}><ClearIcon /></IconButton>
             </div>
-            {issue && <button type="button" className={styles.problem} title={issueText(issue)} onClick={() => why(combo.key)}>{t('map.why')}</button>}
+            {issue && <button type="button" className={styles.problem} title={issueText(issue)} onClick={() => { pickColumn(entry.uid); why(combo.key) }}>{t('map.why')}</button>}
           </Fragment>
         )
       })}
@@ -86,7 +98,7 @@ function Field({ s, entry, slot, section }: { s: SessionState; entry: Entry; slo
 
 interface SectionProps {
   s: SessionState
-  entry: Entry
+  columns: Column[]
   id: string
   label: string
   all: Item[]
@@ -94,7 +106,7 @@ interface SectionProps {
   onToggle?: () => void
 }
 
-export function Section({ s, entry, id, label, all, collapsible, onToggle }: SectionProps) {
+export function Section({ s, columns, id, label, all, collapsible, onToggle }: SectionProps) {
   const { t, tr } = useWords()
   const filter = useMapUi((m) => m.filter)
   const scrollTo = useMapUi((m) => m.scrollTo)
@@ -104,22 +116,29 @@ export function Section({ s, entry, id, label, all, collapsible, onToggle }: Sec
     ref.current?.scrollIntoView({ block: 'start' })
     useMapUi.setState({ scrollTo: null })
   }, [scrollTo, id])
-  const rows = groupRows(filterItems(s, entry, all, filter), tr)
-  const mapped = all.filter((item) => isMapped(entry.wanted!, item)).length
+  const rows = groupRows(tableItems(s, columns.map((c) => c.entry), all, filter), tr)
+  const mapped = all.filter((item) => columns.some((c) => isMapped(c.entry.wanted!, item))).length
   return (
     <section ref={ref} className={styles.sec} aria-label={label}>
       <div className={styles.head}>
-        {collapsible
-          ? <button type="button" className={styles.title} aria-expanded="true" onClick={onToggle}><span className={map.chev}>▾</span>{label}</button>
-          : <span className={styles.title}>{label}</span>}
-        <span className={cx(map.count, mapped > 0 && map.has)}>{mapped ? `${mapped} / ` : ''}{all.length}</span>
-      </div>
-      {rows.map((row, i) => (
-        <div key={i} className={styles.row} role="row">
-          <div className={styles.control} role="cell"><strong>{row.control}</strong></div>
-          <div className={styles.slots} role="cell">{row.slots.map((slot) => <Field key={slot.command.hash} s={s} entry={entry} slot={slot} section={id} />)}</div>
+        <div className={styles.headLeft}>
+          {collapsible
+            ? <button type="button" className={styles.title} aria-expanded="true" onClick={onToggle}><span className={map.chev}>▾</span>{label}</button>
+            : <span className={styles.title}>{label}</span>}
+          <span className={cx(map.count, mapped > 0 && map.has)}>{mapped ? `${mapped} / ` : ''}{all.length}</span>
         </div>
-      ))}
+      </div>
+      {rows.flatMap((row) => row.slots.map((slot, i) => (
+        <div key={`${slot.kind}:${slot.command.hash}`} className={cx(styles.row, i === 0 && styles.first)} role="row">
+          <div className={styles.name} role="rowheader">
+            {i === 0 && <strong>{row.control}</strong>}
+            {(slot.position || slot.kind === 'axis') && (
+              <span className={styles.slotLabel}>{slot.position}{slot.kind === 'axis' && <span className={styles.axisTag}>{t('map.axisTag')}</span>}</span>
+            )}
+          </div>
+          {columns.map((column) => <Cell key={column.entry.uid} s={s} column={column} item={slot} section={id} />)}
+        </div>
+      )))}
       {!rows.length && <p className={cx('muted', map.pad)}>{t('map.noCommands')}</p>}
     </section>
   )

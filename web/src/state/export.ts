@@ -9,7 +9,7 @@ import { luaFile } from '../dcs/lua'
 import { KINDS, type AxisFilter, type Bindings, type Combo, type Command, type DeviceDiff, type Modifier, type Modifiers, type Profile } from '../dcs/types'
 import { tr, trUi } from '../i18n/i18n'
 import { offChanged } from './folder'
-import { deviceLabel, entryProfile, entryTemplate, isOff, uiPath, uiProfile, userDiffPath } from './lookup'
+import { deviceLabel, entryProfile, entryTemplate, hasId, isOff, uiPath, uiProfile, userDiffPath } from './lookup'
 import { setupOf, type SessionState } from './session'
 import type { Entry } from './types'
 
@@ -35,7 +35,7 @@ export function exportFiles(s: SessionState) {
   const setup = setupOf(s)
   for (const entry of setup.entries) {
     if (!entry.wanted) continue
-    if (!entry.dcsId.includes('{')) { skipped.push(entry); continue }
+    if (!hasId(entry)) { skipped.push(entry); continue }
     const runtime = s.runtime[entry.uid]
     const original = runtime?.original ?? {}
     const uiOriginal = runtime?.uiOriginal ?? {}

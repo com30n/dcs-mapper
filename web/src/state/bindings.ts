@@ -2,6 +2,7 @@ import i18n from 'i18next'
 import { comboId, comboText, isAxisKey, sameCombo } from '../dcs/combos'
 import { isDefaultFilter } from '../dcs/axis'
 import { forceFeedbackDiff } from '../dcs/forceFeedback'
+import { KEYBOARD_MODIFIER_KEYS } from '../dcs/keyboard'
 import type { AxisFilter, Combo, ForceFeedback, Kind } from '../dcs/types'
 import { usePads } from '../gamepad/store'
 import { tr } from '../i18n/i18n'
@@ -25,7 +26,15 @@ function edit(uid: string, change: (entry: Entry) => void) {
 const waitFor = (listening: Listening) =>
   useMapUi.setState({ listening, adding: [], addAxis: false, focus: null, flash: null, toast: null, toastAction: null, drawer: true })
 
-export function listen(hash: string, kind: Kind, name: string) {
+export function pickColumn(uid?: string) {
+  if (!uid) return
+  const s = get()
+  const index = setupOf(s).entries.findIndex((e) => e.uid === uid)
+  if (index >= 0 && index !== s.active) selectEntry(index)
+}
+
+export function listen(hash: string, kind: Kind, name: string, uid?: string) {
+  pickColumn(uid)
   if (useMapUi.getState().listening?.hash === hash) return useMapUi.setState({ drawer: true })
   waitFor({ hash, kind, name })
 }
@@ -88,6 +97,14 @@ export function assign(input: string) {
   })
 }
 
+export function pressKey(key: string, held: string[]) {
+  if (KEYBOARD_MODIFIER_KEYS.includes(key)) return
+  const modifiers = setupOf(get()).modifiers ?? {}
+  const names = held.flatMap((k) => Object.keys(modifiers).filter((n) => modifiers[n].device === 'Keyboard' && modifiers[n].key === k))
+  useMapUi.setState((m) => { m.adding = [...new Set([...m.adding, ...names])] })
+  assign(key)
+}
+
 export function find(input: string) {
   const s = get()
   const entry = activeOf(s)
@@ -101,8 +118,10 @@ export function find(input: string) {
   })
 }
 
-export const carry = (kind: Kind, hash: string, name: string, combo: Combo, mode: 'copy' | 'move') =>
+export function carry(kind: Kind, hash: string, name: string, combo: Combo, mode: 'copy' | 'move', uid?: string) {
+  pickColumn(uid)
   waitFor({ hash, kind, name, carry: { combo, mode } })
+}
 
 export function press(input: string) {
   if (useMapUi.getState().listening) assign(input)
@@ -111,7 +130,8 @@ export function press(input: string) {
 
 export const why = (input: string) => useMapUi.setState({ focus: input, explain: true, listening: null })
 
-export function removeCombo(kind: Kind, hash: string, id: string, name: string) {
+export function removeCombo(kind: Kind, hash: string, id: string, name: string, uid?: string) {
+  pickColumn(uid)
   const entry = activeOf(get())!
   remember()
   edit(entry.uid, (target) => {

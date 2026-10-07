@@ -5,7 +5,7 @@ import type { DeviceDiff } from '../dcs/types'
 import { genericDevice, loadDevice } from '../data/load'
 import type { Device } from '../data/types'
 import { remember } from './history'
-import { candidatesFor, canonicalId, configFile, isOff, matchingIds, presetFor } from './lookup'
+import { builtInId, candidatesFor, canonicalId, configFile, folderOf, isOff, matchingIds, presetFor } from './lookup'
 import { draftSetup, setupOf, useSession, type SessionState } from './session'
 import type { Entry, Start } from './types'
 
@@ -27,8 +27,13 @@ async function usedFor(name: string, diff: DeviceDiff) {
   return [diff, ...diffs].map(usedIn).filter((used) => used.length)
 }
 
+export function builtInDevice(name: string): Device {
+  const role = name.toLowerCase() as 'keyboard' | 'mouse'
+  return { id: `builtin/${role}`, name: i18n.t(`role.${role}`), role, dcsName: name, pictures: {}, card: null, views: [] }
+}
+
 const entryDevice = (entry: Entry) =>
-  entry.generic ? Promise.resolve(genericDevice(entry.generic)) : loadDevice(entry.deviceId).catch(() => genericDevice(templateOf(entry.dcsId)))
+  builtInId(entry.dcsId) ? Promise.resolve(builtInDevice(entry.dcsId)) : entry.generic ? Promise.resolve(genericDevice(entry.generic)) : loadDevice(entry.deviceId).catch(() => genericDevice(templateOf(entry.dcsId)))
 
 const allEntries = (s: SessionState) => Object.values(s.byAircraft).flatMap((a) => a.entries)
 
@@ -64,7 +69,7 @@ export function newEntry(s: SessionState, device: Device, dcsId: string, start: 
 export async function installedText(name: string) {
   const s = get()
   const file = configFile(s, name)
-  return file && s.folder ? s.folder.read(`${s.catalog!.folder}/joystick/${file}.diff.lua`) : null
+  return file && s.folder ? s.folder.read(`${s.catalog!.folder}/${folderOf(file)}/${file}.diff.lua`) : null
 }
 
 export async function installedDiff(name: string): Promise<DeviceDiff> {
@@ -105,6 +110,16 @@ export async function toggleDevice(id: string) {
   try { await addDevice(id) } finally { adding.delete(id) }
 }
 
+export function toggleBuiltIn(name: string) {
+  const s = get()
+  const there = setupOf(s).entries.find((e) => e.dcsId === name)
+  if (there) return removeDevice(there.uid)
+  const device = builtInDevice(name)
+  remember()
+  useSession.setState((d) => { d.devices[device.id] = device })
+  pushEntry(newEntry(get(), device, name, 'current'))
+}
+
 export async function addFiles(files: File[]) {
   let noted = false
   for (const file of files) {
@@ -116,8 +131,10 @@ export async function addFiles(files: File[]) {
       continue
     }
     const s = get()
-    const id = name.includes('{') ? canonicalId(s, name) : ''
-    const device = await deviceFor(name, diff)
+    const builtIn = builtInId(name)
+    const id = builtIn ?? (name.includes('{') ? canonicalId(s, name) : '')
+    const device = builtIn ? builtInDevice(builtIn) : await deviceFor(name, diff)
+    if (builtIn) useSession.setState((d) => { d.devices[device.id] = device })
     if (!noted) remember()
     noted = true
     pushEntry(newEntry(get(), device, id, 'file', { name: file.name, text }))
@@ -136,6 +153,15 @@ export async function loadFromFolder() {
     if (get().folder !== folder) return
     if (present(id)) continue
     useSession.setState((d) => { draftSetup(d, aircraftId).entries.push(entry) })
+    added++
+  }
+  for (const name of scan.builtIn[catalog.folder] ?? []) {
+    if (!catalog.profiles[name] || present(name)) continue
+    const device = builtInDevice(name)
+    useSession.setState((d) => {
+      d.devices[device.id] = device
+      draftSetup(d, aircraftId).entries.push(newEntry(d, device, name, 'current'))
+    })
     added++
   }
   if (added) useSession.setState({ message: i18n.t('load.loaded', { count: added, aircraft: i18n.t(catalog.name, { ns: 'aircraft', defaultValue: catalog.name }) }) })

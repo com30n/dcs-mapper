@@ -1,0 +1,16 @@
+.keyboard { position: relative; width: 100%; container-type: inline-size; }
+.key { position: absolute; box-sizing: border-box; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 5px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink-2); font: 600 max(9px, 1.15cqw) var(--mono); overflow: hidden; white-space: nowrap; }
+.mouse { position: relative; width: min(100%, 300px); aspect-ratio: 300 / 420; margin: 0 auto; color: #5F6B85; }
+.mouse svg { width: 100%; height: 100%; }
+.body { fill: var(--surface-2); }
+.wheel { fill: var(--surface); }
+.dot { position: absolute; transform: translate(-50%, -50%); min-width: 32px; height: 32px; padding: 0 6px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 16px; border: 2px solid var(--surface); font: 600 13px var(--mono); background: var(--surface); }
+.used { background: var(--ink-2); color: #fff; border-color: var(--ink-2); }
+.free { background: var(--surface); color: var(--blue); border: 2px solid var(--blue); }
+.warn { background: var(--warn); color: #fff; border-color: var(--warn); }
+.modifier { background: var(--modifier); color: #fff; border-color: var(--modifier); }
+.key.free { color: var(--ink-2); border: 1px solid var(--line-2); }
+.sel { background: var(--blue); color: #fff; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(27, 79, 216, 0.3); }
+.lit { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--open); }
+.live { background: var(--ok); color: #fff; border-color: var(--ok); }
+.wrong { opacity: 0.3; cursor: not-allowed; box-shadow: none; }

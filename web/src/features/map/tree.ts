@@ -51,6 +51,15 @@ export function searchResults(profile: Profile, search: string, tr: Translate): 
     .slice(0, 300)
 }
 
+const indexCache = new WeakMap<Command[], Map<string, Command>>()
+
+export function commandOf(profile: Profile, kind: Kind, hash: string) {
+  const list = profile.commands[kind]
+  let index = indexCache.get(list)
+  if (!index) indexCache.set(list, (index = new Map(list.map((c) => [c.hash, c]))))
+  return index.get(hash)
+}
+
 export const isMapped = (wanted: Bindings, { command, kind }: Item) => (wanted[kind][command.hash] ?? []).length > 0
 
 export function groupRows(list: Item[], tr: Translate): Row[] {
@@ -65,9 +74,27 @@ export function groupRows(list: Item[], tr: Translate): Row[] {
   return rows
 }
 
-export function filterItems(s: SessionState, entry: Entry, list: Item[], filter: Filter) {
-  if (filter === 'mapped') return list.filter((item) => isMapped(entry.wanted!, item))
-  if (filter === 'free') return list.filter((item) => !isMapped(entry.wanted!, item))
-  if (filter === 'problems') return list.filter(({ command, kind }) => (entry.wanted![kind][command.hash] ?? []).some((c) => comboIssue(s, entry, c, command.hash)))
+export function mergeProfiles(profiles: Profile[]): Profile {
+  const commands = Object.fromEntries(KINDS.map((kind) => {
+    const byHash = new Map<string, Command>()
+    for (const profile of profiles) {
+      for (const command of profile.commands[kind]) {
+        const seen = byHash.get(command.hash)
+        if (!seen || (seen.joystick === false && command.joystick !== false)) byHash.set(command.hash, command)
+      }
+    }
+    return [kind, [...byHash.values()]]
+  })) as Profile['commands']
+  return { commands, defaults: { key: {}, axis: {} } }
+}
+
+export function shownItems(wanted: Bindings[], list: Item[], filter: Filter) {
+  if (filter === 'mapped') return list.filter((item) => wanted.some((w) => isMapped(w, item)))
+  if (filter === 'free') return list.filter((item) => !wanted.some((w) => isMapped(w, item)))
   return list
+}
+
+export function tableItems(s: SessionState, entries: Entry[], list: Item[], filter: Filter) {
+  if (filter !== 'problems') return shownItems(entries.map((e) => e.wanted!), list, filter)
+  return list.filter(({ command, kind }) => entries.some((e) => (e.wanted![kind][command.hash] ?? []).some((c) => comboIssue(s, e, c, command.hash))))
 }
