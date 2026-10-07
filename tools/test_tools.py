@@ -53,6 +53,16 @@ def test_f16_default_axes_are_the_dcs_defaults():
     assert defaults['a2003cdnil'] == [{'key': 'JOY_RZ'}]
     assert defaults['a2004cdnil'] == [{'key': 'JOY_Z'}]
 
+def test_keyboard_and_mouse_are_profiles_with_the_dcs_defaults():
+    profiles = catalogue('F-16C_50')['profiles']
+    keyboard, mouse = profiles['Keyboard'], profiles['Mouse']
+    named = lambda profile, kind, name: next(c['hash'] for c in profile['commands'][kind] if c['name'] == name and c.get('joystick') is not False)
+    assert keyboard['defaults']['key'][named(keyboard, 'key', 'Wheel Brake - ON/OFF')] == [{'key': 'W'}]
+    assert keyboard['defaults']['key'][named(keyboard, 'key', 'Eject (3 times)')] == [{'key': 'E', 'reformers': ['LCtrl']}]
+    assert mouse['defaults']['axis'][named(mouse, 'axis', 'Camera Zoom View')] == [{'key': 'MOUSE_Z'}]
+    inputs = {c['key'] for kind in ('key', 'axis') for combos in mouse['defaults'][kind].values() for c in combos}
+    assert inputs <= {f'MOUSE_BTN{n}' for n in range(1, 6)} | {'MOUSE_X', 'MOUSE_Y', 'MOUSE_Z'}, inputs
+
 def test_every_button_of_the_ed_moza_preset_is_on_the_mh16_picture():
     preset = catalogue('F-16C_50')['presets']['MOZA AB9 FFB Base']
     used = {c['key'] for entry in preset['keyDiffs'].values() for c in entry.get('added', [])}

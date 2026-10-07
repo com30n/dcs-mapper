@@ -2,8 +2,11 @@
 .tabs { display: flex; flex-wrap: wrap; gap: 6px; }
 .tab { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--surface); font-weight: 600; font-size: 14px; }
 .tab :global(.eyebrow) { font-size: 11px; }
-.tab[data-state="active"] { background: var(--ink); color: #fff; border-color: var(--ink); }
-.tab[data-state="active"] :global(.eyebrow) { color: #CBD2DC; }
+.tab[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+.tab[aria-pressed="true"] :global(.eyebrow) { color: #CBD2DC; }
+.tab:disabled { cursor: default; }
+.tick { flex: none; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; border: 1.5px solid #8994A3; }
+.tab[aria-pressed="true"] .tick { background: #fff; color: var(--ink); border-color: #fff; }
 .spacer { flex: 1; }
 .root { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
 .pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); font-size: 14px; }
@@ -32,11 +35,12 @@
 .howto b { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--ink); color: #fff; font: 600 12px var(--mono); }
 .push { margin-left: auto; }
 .toast { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 10px 16px; background: var(--ok-soft); border: 1px solid var(--ok-line); border-radius: 12px; color: var(--ok-text); }
-.sections { display: flex; flex-direction: column; gap: 12px; padding-bottom: 24px; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.sections { padding-bottom: 24px; flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior-x: contain; }
 .pad { padding: 16px; }
 
 .dock { display: none; flex: 1 1 900px; max-width: 1100px; min-width: 0; flex-direction: column; gap: 10px; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow-y: auto; }
 .dock h2, .drawer h2 { font-size: 17px; }
+.showDock { display: none; }
 .drawerTab { position: fixed; right: 0; top: 50%; transform: translateY(-50%); z-index: 6; writing-mode: vertical-rl; padding: 18px 10px; border: 0; border-radius: 12px 0 0 12px; background: var(--ink); color: #fff; font-weight: 600; font-size: 14px; box-shadow: -4px 0 16px rgba(20, 24, 30, 0.18); }
 .drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 7; width: min(1180px, 94vw); display: flex; flex-direction: column; gap: 12px; padding: 16px 20px; background: var(--surface); border-left: 1px solid var(--line); box-shadow: -12px 0 32px rgba(20, 24, 30, 0.2); overflow-y: auto; }
 .drawerCard { position: sticky; top: -16px; z-index: 3; display: flex; flex-direction: column; gap: 10px; }
@@ -47,12 +51,14 @@
 @media (min-width: 2160px) {
   .dock { display: flex; }
   .drawerTab, .drawer { display: none; }
+  .dockHidden .dock { display: none; }
+  .dockHidden .showDock { display: inline-flex; gap: 6px; }
 }
 
 @media (max-width: 960px) {
   .grid { flex-wrap: wrap; }
   .nav { max-width: none; overflow: visible; }
-  .sections { overflow: visible; }
+  .sections { overflow-x: auto; overflow-y: visible; }
 }
 
 @media (max-width: 720px) {

@@ -5,7 +5,7 @@ import type { Entry } from './types'
 import { EMPTY_SCAN } from '../folder/scan'
 import { luaFile } from '../dcs/lua'
 import { genericDevice } from '../data/load'
-import { addFiles, bestId, changePicture, linkPad, loadFromFolder, newEntry, setDcsId, toggleDevice } from './devices'
+import { addFiles, bestId, changePicture, linkPad, loadFromFolder, newEntry, setDcsId, toggleBuiltIn, toggleDevice } from './devices'
 import { useMapUi } from './mapUi'
 import { openFolder } from './folder'
 import { undecided } from './lookup'
@@ -351,5 +351,33 @@ describe('opening the DCS folder', () => {
     })
     await openFolder(folderWith([id]))
     expect(Object.fromEntries(Object.entries(useSession.getState().byAircraft).map(([a, setup]) => [a, setup.entries.length]))).toEqual({ [catalog.id]: 1 })
+  })
+})
+
+describe('the keyboard and the mouse, built in', () => {
+  const own = { commands: catalog.commands, defaults: { key: {}, axis: {} } }
+  const withProfiles = { ...catalog, profiles: { Keyboard: own, Mouse: own } }
+  const entries = () => setupOf(useSession.getState()).entries
+
+  it('adds the keyboard once, with no DCS id to find and nothing to link, and takes it out again', async () => {
+    useSession.setState(session([], undefined, { catalog: withProfiles }))
+    await toggleBuiltIn('Keyboard')
+    const [keyboard] = entries()
+    expect([keyboard.dcsId, keyboard.start, useSession.getState().devices[keyboard.deviceId].role]).toEqual(['Keyboard', 'current', 'keyboard'])
+    await toggleBuiltIn('Keyboard')
+    expect(entries()).toEqual([])
+  })
+
+  it('brings in the keyboard and mouse files of the aircraft from the DCS folder', async () => {
+    const folder = { name: 'DCS', list: async () => [], read: async () => null, log: async () => null }
+    useSession.setState(session([], undefined, { catalog: withProfiles, folder, scan: { ...EMPTY_SCAN, builtIn: { [catalog.folder]: ['Mouse'] } } }))
+    await loadFromFolder()
+    expect(entries().map((e) => [e.dcsId, e.start])).toEqual([['Mouse', 'current']])
+  })
+
+  it('takes a Keyboard.diff.lua file as the keyboard', async () => {
+    useSession.setState(session([], undefined, { catalog: withProfiles }))
+    await addFiles([new File([luaFile('diff', {})], 'Keyboard.diff.lua')])
+    expect(entries().map((e) => [e.dcsId, useSession.getState().devices[e.deviceId].role])).toEqual([['Keyboard', 'keyboard']])
   })
 })

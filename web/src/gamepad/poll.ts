@@ -15,7 +15,7 @@ let watching = false
 
 const sameSet = (a: Set<string>, b: Set<string>) => a.size === b.size && [...a].every((x) => b.has(x))
 
-function watch(entry: Entry, now: PadState) {
+function watch(entry: Entry, active: boolean, index: number, now: PadState) {
   let w = watched.get(entry.uid)
   if (!w) watched.set(entry.uid, (w = { stuck: new Set(now.inputs), live: new Set() }))
   for (const input of [...w.stuck]) if (!now.inputs.has(input)) w.stuck.delete(input)
@@ -23,9 +23,10 @@ function watch(entry: Entry, now: PadState) {
   const stuck = w.stuck
   const live = new Set([...now.inputs].filter((input) => !stuck.has(input)))
   w.live = live
-  if (!sameSet(live, new Set(usePads.getState().live))) usePads.setState({ live: [...live] })
+  if (active && !sameSet(live, new Set(usePads.getState().live))) usePads.setState({ live: [...live] })
   const ui = useMapUi.getState()
   if (ui.listening && !ui.dialog) {
+    if (!active) return
     if (listenStart?.listening !== ui.listening) {
       listenStart = { listening: ui.listening, state: now }
       return
@@ -45,9 +46,10 @@ function watch(entry: Entry, now: PadState) {
     useMapUi.setState((m) => { Object.assign(m.dialog!, { device: entry.dcsId, key: picked, name: null }) })
     return
   }
-  if (fresh.length) useMapUi.setState({ lastPressed: fresh.at(-1)! })
+  if (fresh.length && !active && !dialog) useSession.setState({ active: index })
+  if (fresh.length && (active || !dialog)) useMapUi.setState({ lastPressed: fresh.at(-1)! })
   if (fresh.length && !dialog) find(fresh.at(-1)!)
-  if (dialog?.type === 'tune') {
+  if (active && dialog?.type === 'tune') {
     const combo = entry.wanted?.axis[dialog.hash]?.[dialog.at]
     const value = combo && now.axes[AXES.indexOf(combo.key)]
     if (value !== undefined && value !== dialog.input) useMapUi.setState((m) => { if (m.dialog?.type === 'tune') m.dialog.input = value })
@@ -64,10 +66,17 @@ function mapperFrame({ pads, states, fresh }: PadFrame) {
       useMapUi.setState({ identify: null })
     }
   }
+  if (!watching || identify) return
   const s = useSession.getState()
-  const entry = setupOf(s).entries[s.active]
-  const pad = watching && entry && !identify ? padFor(s, entry, usePads.getState().pads) : null
-  if (entry && pad) watch(entry, states.get(pad.index)!)
+  const { listening, hidden } = useMapUi.getState()
+  const known = usePads.getState().pads
+  setupOf(s).entries.forEach((entry, index) => {
+    const active = index === useSession.getState().active
+    if ((listening && !active) || (!active && hidden.includes(entry.uid))) return
+    const pad = padFor(s, entry, known)
+    const state = pad && states.get(pad.index)
+    if (state) watch(entry, active, index, state)
+  })
 }
 
 export function startPolling() {

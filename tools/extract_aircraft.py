@@ -192,6 +192,10 @@ def build(dcs, profile):
             profiles[template] = {'commands': screen_commands(raw, device), 'defaults': defaults_of(device)}
         elif (device_defaults := defaults_of(device)) != defaults['']:
             defaults[template] = device_defaults
+    for template in ('Keyboard', 'Mouse'):
+        device = raw.get(template.lower()) or {}
+        if device.get('key') or device.get('axis'):
+            profiles[template] = {'commands': screen_commands(raw, device), 'defaults': defaults_of(device)}
     return {
         'id': profile,
         'folder': folder_name(profile),

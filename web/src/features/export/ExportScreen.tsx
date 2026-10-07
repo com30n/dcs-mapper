@@ -6,7 +6,7 @@ import { useWords } from '../../i18n/i18n'
 import { fail } from '../../state/aircraft'
 import { comboChanges, download, downloadPreset, downloadZip, exportFiles, ffChanges, fileDiff, modifierChanges, offChanges, type Change } from '../../state/export'
 import { offChanged } from '../../state/folder'
-import { entryProfile, uiPath, uiProfile, userDiffPath } from '../../state/lookup'
+import { entryProfile, hasId, uiPath, uiProfile, userDiffPath } from '../../state/lookup'
 import { issueText, problemsOf } from '../../state/problems'
 import { setupOf, useSession, type SessionState } from '../../state/session'
 import type { Entry } from '../../state/types'
@@ -92,7 +92,7 @@ function EntryRows({ s, entry, texts }: { s: SessionState; entry: Entry; texts: 
       <Button small onClick={() => downloadPreset(s, entry)}>{t('export.preset')}</Button>
     </>
   )
-  if (!entry.dcsId.includes('{')) {
+  if (!hasId(entry)) {
     return (
       <div className={styles.file}>
         <div className="stack"><span className="eyebrow">{role}</span><strong>{device.name}</strong><span className="mono small">{t('export.noId')}</span></div>

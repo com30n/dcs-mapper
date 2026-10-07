@@ -23,6 +23,8 @@ export interface MapUiState {
   lastPressed: string | null
   identify: string | null
   scrollTo: string | null
+  hidden: string[]
+  dock: boolean
 }
 
 export const useMapUi = create<MapUiState>()(
@@ -44,11 +46,13 @@ export const useMapUi = create<MapUiState>()(
       lastPressed: null,
       identify: null,
       scrollTo: null,
+      hidden: [],
+      dock: true,
     }) as MapUiState),
     {
       name: 'hotas-mapper-next-map',
       storage: createJSONStorage(() => localStorage),
-      partialize: (s) => ({ filter: s.filter, open: s.open }),
+      partialize: (s) => ({ filter: s.filter, open: s.open, hidden: s.hidden, dock: s.dock }),
     },
   ),
 )

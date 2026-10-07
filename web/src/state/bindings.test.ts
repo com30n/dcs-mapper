@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { assign, carry, press, removeCombo, saveTune, selectEntry, why } from './bindings'
+import { assign, carry, listen, press, pressKey, removeCombo, saveTune, selectEntry, why } from './bindings'
 import { useMapUi } from './mapUi'
 import { comboId, KEYBOARD_MODIFIERS } from '../dcs/combos'
 import type { Bindings, Combo, Kind } from '../dcs/types'
@@ -163,5 +163,49 @@ describe('copying, moving and clearing one binding', () => {
     useSession.setState(session([entry({ wanted: { key: { [trim.hash]: [{ key: 'JOY_BTN1' }, kept] }, axis: {} } })]))
     removeCombo('key', trim.hash, comboId({ key: 'JOY_BTN1' }), 'name')
     expect(keys()[trim.hash]).toEqual([kept])
+  })
+})
+
+describe('a column per device', () => {
+  const trim = catalog.commands.key[0]
+  const bound = { key: { [trim.hash]: [{ key: 'JOY_BTN1' }] }, axis: {} }
+  const two = () => useSession.setState(session([entry({ wanted: { key: {}, axis: {} } }), entry({ uid: 'pedals', dcsId: PEDALS, wanted: bound })]))
+  const pedals = () => useSession.getState().byAircraft[catalog.id].entries[1].wanted!.key
+
+  it('waits on the device of the field that was clicked', () => {
+    two()
+    listen(trim.hash, 'key', 'Trim', 'pedals')
+    expect([useSession.getState().active, useMapUi.getState().listening?.hash]).toEqual([1, trim.hash])
+    assign('JOY_BTN4')
+    expect(pedals()[trim.hash]).toEqual([{ key: 'JOY_BTN4' }])
+  })
+
+  it('copies and clears on the device of the column', () => {
+    two()
+    carry('key', trim.hash, 'Trim', { key: 'JOY_BTN1' }, 'copy', 'pedals')
+    assign('JOY_BTN2')
+    expect(pedals()[trim.hash]).toEqual([{ key: 'JOY_BTN1' }, { key: 'JOY_BTN2' }])
+    useSession.setState({ active: 0 })
+    removeCombo('key', trim.hash, comboId({ key: 'JOY_BTN1' }), 'Trim', 'pedals')
+    expect([pedals()[trim.hash], useSession.getState().active]).toEqual([[{ key: 'JOY_BTN2' }], 1])
+  })
+})
+
+describe('binding keys of the keyboard', () => {
+  const trim = catalog.commands.key[0]
+  const keyboard = () => useSession.getState().byAircraft[catalog.id].entries[0].wanted!.key
+
+  it('binds the key with the keyboard modifiers held', () => {
+    useSession.setState(session([entry({ uid: 'kb', dcsId: 'Keyboard' })]))
+    useMapUi.setState({ listening: { hash: trim.hash, kind: 'key', name: 'Trim' }, adding: [], addAxis: false })
+    pressKey('Y', ['LCtrl', 'RShift'])
+    expect(keyboard()[trim.hash]).toEqual([{ key: 'Y', reformers: ['LCtrl', 'RShift'] }])
+  })
+
+  it('waits for another key while only modifiers are held', () => {
+    useSession.setState(session([entry({ uid: 'kb', dcsId: 'Keyboard' })]))
+    useMapUi.setState({ listening: { hash: trim.hash, kind: 'key', name: 'Trim' }, adding: [], addAxis: false })
+    pressKey('LCtrl', ['LCtrl'])
+    expect([keyboard()[trim.hash], useMapUi.getState().listening?.hash]).toEqual([undefined, trim.hash])
   })
 })
