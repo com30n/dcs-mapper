@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { KEYBOARD_MODIFIERS } from '../dcs/combos'
 import { catalog, entry, session, STICK, uiCatalog } from './session.fixture'
-import { comboIssue, keyState, problemsOf } from './problems'
+import { comboIssue, comboKeys, keyState, problemsOf } from './problems'
 
 const hash = catalog.commands.key[0].hash
 const uiHash = uiCatalog.commands.key[0].hash
@@ -49,5 +49,20 @@ describe('why a binding will not work', () => {
     const e = entry({ wanted: { key: { [hash]: [{ key: 'JOY_BTN10' }, { key: 'JOY_BTN2' }] }, axis: {} } })
     const problems = problemsOf(session([e], modifiers), e)
     expect(problems.map((p) => [p.combo.key, p.issue.code])).toEqual([['JOY_BTN10', 'modifierKey']])
+  })
+})
+
+describe('the inputs of a binding on its device picture', () => {
+  const THROTTLE = 'MOZA MTQ {throttle}'
+  const modifiers = { ...KEYBOARD_MODIFIERS, Paddle: { device: STICK, key: 'JOY_BTN4', switch: false }, Thumb: { device: THROTTLE, key: 'JOY_BTN9', switch: false } }
+
+  it('lights the button with the modifiers held on the same device', () => {
+    const s = session([entry()], modifiers)
+    expect(comboKeys(s, entry(), { key: 'JOY_BTN29', reformers: ['Paddle', 'Thumb', 'LShift'] })).toEqual(['JOY_BTN29', 'JOY_BTN4'])
+  })
+
+  it('lights the keyboard modifiers on the keyboard', () => {
+    const keyboard = entry({ uid: 'kb', dcsId: 'Keyboard' })
+    expect(comboKeys(session([keyboard], modifiers), keyboard, { key: 'Y', reformers: ['LCtrl', 'Paddle'] })).toEqual(['Y', 'LCtrl'])
   })
 })

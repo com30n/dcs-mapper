@@ -25,6 +25,7 @@ export interface MapUiState {
   scrollTo: string | null
   hidden: string[]
   dock: boolean
+  hover: { uid: string; keys: string[] } | null
 }
 
 export const useMapUi = create<MapUiState>()(
@@ -48,6 +49,7 @@ export const useMapUi = create<MapUiState>()(
       scrollTo: null,
       hidden: [],
       dock: true,
+      hover: null,
     }) as MapUiState),
     {
       name: 'hotas-mapper-next-map',
@@ -61,3 +63,6 @@ export const categoryId = (kind: Kind, name = '') => (kind === 'axis' ? 'axis' :
 
 export const closeDialog = () => useMapUi.setState({ dialog: null })
 export const cancel = () => useMapUi.setState({ listening: null, adding: [], addAxis: false, focus: null, drawer: false })
+
+export const hoverKeys = (uid: string, keys: string[]) => useMapUi.setState({ hover: { uid, keys } })
+export const unhover = (uid: string) => { if (useMapUi.getState().hover?.uid === uid) useMapUi.setState({ hover: null }) }
