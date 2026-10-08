@@ -36,13 +36,41 @@ because the button is also a modifier.
 
 ![The change in the stick's .diff.lua file](docs/screenshots/export.png)
 
-Your device is not in the library yet? Put its buttons on a picture in the
-[device editor](https://com30n.github.io/dcs-mapper/editor/) and send the folder it makes, see
-[CONTRIBUTING.md](CONTRIBUTING.md#add-a-device).
 
 Every device also gets a layout picture to print or keep on a second screen:
 
 ![The F-16C layout of the MOZA AB9 stick](docs/screenshots/layout.png)
+
+## Device editor
+
+**Open https://com30n.github.io/dcs-mapper/editor/** to put a device's buttons on its pictures, or to
+fix a device that is already in the library. It also runs in your browser only.
+
+1. Pick a device from the library, or start a new one and add its pictures.
+2. Press a button on the device and click where it is on the picture; drag a number to move it.
+3. Frame the card (the picture in the library) and the views (what the binding screen shows).
+4. **Try it in the mapper** opens the site with your version of the device, so you can check it
+   before sending it.
+5. **Download device folder (.zip)** saves your work.
+
+Your work stays in the browser until you download it. To get it onto the site, unzip the folder into
+`devices/<maker>/` and open a pull request, or upload it on GitHub without git. When the pull request
+is merged, the site is rebuilt with it.
+
+## Add your aircraft or device
+
+Every aircraft, device and language on the site is a folder in this repository, and anyone can add
+one with a pull request. The full rules are in [CONTRIBUTING.md](CONTRIBUTING.md). In short:
+
+- **Aircraft** come from your own DCS install: run `hotas-mapper-export-module.exe` from the
+  [Releases](https://github.com/com30n/dcs-mapper/releases) page and upload the
+  `aircraft/<module>/` folder it writes. Command lists are never typed by hand.
+- **Devices** are made in the device editor above: one folder per device in
+  `devices/<maker>/<device>/`, with `device.json` and the pictures. Number the buttons as the maker's
+  software or the DCS Controls screen does, and only send pictures you made or may share.
+- **Languages:** copy `locales/en.json` to `locales/<code>.json` and translate it.
+- Every pull request is checked automatically; the check names the file and what is wrong. Without
+  git, open an issue with the **Add a device** or **Add an aircraft** form and attach the files.
 
 ## Run your own copy
 
@@ -86,7 +114,7 @@ npm --prefix web ci
 npm --prefix web run dev
 ```
 
-Then open http://localhost:5173. The page reloads on every change in `web/`; aircraft, devices and
+Then open http://localhost:5173 (the device editor is at http://localhost:5173/editor/). The page reloads on every change in `web/`; aircraft, devices and
 translations are read straight from the repository. `npm --prefix web test` runs the tests and
 checks the data files, `npm --prefix web run build` puts the whole site into `web/dist`, and
 `docker compose up --build` builds and runs the image from your checkout.
@@ -108,7 +136,7 @@ checks the data files, `npm --prefix web run build` puts the whole site into `we
 - `Dockerfile`, `compose.yaml`, `nginx.conf` — the same build behind nginx in a container;
   `deploy/dcs-mapper` — the Helm chart that runs that container in Kubernetes.
 
-Adding aircraft, devices and translations, also without git: see [CONTRIBUTING.md](CONTRIBUTING.md).
+Adding aircraft, devices and translations: see [Add your aircraft or device](#add-your-aircraft-or-device) and [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Rebuilding the data
 
