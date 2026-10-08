@@ -10,7 +10,7 @@ import { About } from './About'
 import styles from './Editor.module.css'
 import { changeCount } from './model'
 import { Side } from './Side'
-import { discardDraft, downloadFolder, idOf, isDrafted, newDevice, openDevice, tryInMapper, useEditor } from './store'
+import { discardDraft, downloadFolder, editedDevices, idOf, isDrafted, newDevice, openDevice, tryInMapper, useEditor } from './store'
 import { WorkArea } from './WorkArea'
 
 function EditorHeader() {
@@ -32,18 +32,20 @@ function EditorHeader() {
 function Toolbar() {
   const { t } = useWords()
   const s = useEditor()
-  const changes = changeCount(s.original, s.device)
+  const edited = editedDevices(s)
+  const changes = edited.reduce((n, d) => n + changeCount(d.original, d.device), 0)
+  const marked = new Set(edited.map((d) => d.id))
   return (
     <div className={styles.toolbar}>
       <label htmlFor="device-pick" className="eyebrow">{t('editor.device')}</label>
       <select id="device-pick" className={cx('text', styles.devicePick)} value={s.device!.id}
         onChange={(e) => { openDevice(e.target.value).catch((error: Error) => useEditor.setState({ message: error.message })) }}>
         {!s.device!.id && <option value="">{t('editor.newDeviceOption')}</option>}
-        {s.library.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+        {s.library.map((d) => <option key={d.id} value={d.id}>{marked.has(d.id) ? `● ${d.name}` : d.name}</option>)}
       </select>
       <button type="button" className={styles.dashedButton} onClick={newDevice}>{t('editor.newDevice')}</button>
       <span className={styles.grow} />
-      <span className={changes ? 'warn-text' : 'muted'}>{changes ? t('editor.changes', { count: changes }) : t('editor.noChanges')}</span>
+      <span className={changes ? 'warn-text' : 'muted'}>{changes ? t(edited.length > 1 ? 'editor.changesMany' : 'editor.changes', { count: changes, devices: edited.length }) : t('editor.noChanges')}</span>
     </div>
   )
 }

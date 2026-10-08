@@ -7,7 +7,7 @@ import type { Crop, Device, DeviceIndexEntry, Frame } from '../data/types'
 import { AXES } from '../dcs/combos'
 import { hasHat, type PadFrame } from '../gamepad/pads'
 import { download } from '../state/export'
-import { addPicture, cropOf, dcsNameOf, deviceId, deviceJson, emptyDevice, folderName, layerAt, marksOf, nextOpen, padInputs, placeMark, removeMark, sortInputs, toPicture, viewMarks, withCrop } from './model'
+import { addPicture, changeCount, cropOf, dcsNameOf, deviceId, deviceJson, emptyDevice, folderName, layerAt, marksOf, nextOpen, padInputs, placeMark, removeMark, sortInputs, toPicture, viewMarks, withCrop } from './model'
 
 export type Mode = 'buttons' | 'card' | 'views'
 
@@ -25,11 +25,19 @@ export interface EditorState {
   reported: string[]
   padName: string | null
   message: string
+  kept: Record<string, Kept>
+}
+
+export interface Kept {
+  original: Device
+  device: Device
+  files: Record<string, File>
+  maker: string
 }
 
 export const useEditor = create<EditorState>()(() => ({
   library: [], original: null, device: null, maker: '', files: {}, mode: 'buttons', picture: null, whole: null, view: 0,
-  selected: null, reported: [], padName: null, message: '',
+  selected: null, reported: [], padName: null, message: '', kept: {},
 }))
 
 const get = () => useEditor.getState()
@@ -46,15 +54,38 @@ export async function loadLibrary() {
   set({ library: await loadDeviceIndex() })
 }
 
-export async function openDevice(id: string) {
-  const device = await loadDevice(id)
+const NEW = '#new'
+const keyOf = (s: EditorState) => s.device?.id || NEW
+
+function stash(s: EditorState) {
+  const kept = { ...s.kept }
+  if (!s.device || !s.original) return kept
+  if (changeCount(s.original, s.device) > 0 || Object.keys(s.files).length) kept[keyOf(s)] = { original: s.original, device: s.device, files: s.files, maker: s.maker }
+  else delete kept[keyOf(s)]
+  return kept
+}
+
+export const editedDevices = (s: EditorState) =>
+  Object.values(stash(s)).map((k) => ({ ...k, id: k.device.id || deviceId(k.maker, k.device.name) }))
+
+function show(work: Kept, kept: Record<string, Kept>) {
+  const { device } = work
   const picture = Object.keys(device.pictures).find((name) => marksOf(device, name).length) ?? Object.keys(device.pictures)[0] ?? null
   const whole = device.views.findIndex((v) => v.layers)
-  set({ original: device, device, maker: id.split('/')[0], files: {}, mode: 'buttons', picture, whole: whole < 0 ? null : whole, view: 0, selected: null, message: '' })
+  set({ ...work, kept, mode: 'buttons', picture, whole: whole < 0 ? null : whole, view: 0, selected: null, message: '' })
+}
+
+export async function openDevice(id: string) {
+  const kept = stash(get())
+  if (kept[id]) return show(kept[id], kept)
+  const device = await loadDevice(id)
+  show({ original: device, device, maker: id.split('/')[0], files: {} }, kept)
 }
 
 export function newDevice() {
-  set({ original: emptyDevice(), device: emptyDevice(), maker: '', files: {}, mode: 'buttons', picture: null, whole: null, view: 0, selected: null, reported: [], message: '' })
+  const kept = stash(get())
+  if (kept[NEW]) return show(kept[NEW], kept)
+  set({ original: emptyDevice(), device: emptyDevice(), maker: '', files: {}, mode: 'buttons', picture: null, whole: null, view: 0, selected: null, reported: [], message: '', kept })
 }
 
 export const setMeta = (patch: Partial<Pick<Device, 'name' | 'role' | 'dcsName'>>) => set({ device: { ...get().device!, ...patch } })
@@ -189,19 +220,24 @@ export function removeView() {
 export const idOf = (s: EditorState) => (s.device!.id || deviceId(s.maker, s.device!.name))
 export const ready = (s: EditorState) => !!s.device?.name.trim() && Object.keys(s.device.pictures).length > 0
 
-async function bytesOf(s: EditorState, name: string) {
-  const file = s.files[name]
+async function bytesOf(device: Device, files: Record<string, File>, name: string) {
+  const file = files[name]
   if (file) return new Uint8Array(await file.arrayBuffer())
-  return new Uint8Array(await (await fetch(pictureUrl(s.device!, name))).arrayBuffer())
+  return new Uint8Array(await (await fetch(pictureUrl(device, name))).arrayBuffer())
 }
 
 export async function downloadFolder() {
   const s = get()
   if (!ready(s)) return set({ message: i18n.t('editor.needs') })
-  const id = idOf(s)
-  const files: Record<string, Uint8Array> = { [`devices/${id}/device.json`]: strToU8(deviceJson(s.device!)) }
-  for (const name of Object.keys(s.device!.pictures)) files[`devices/${id}/${name}`] = await bytesOf(s, name)
-  download(`${id.replace('/', ' - ')}.zip`, new Blob([zipSync(files)], { type: 'application/zip' }))
+  const edited = editedDevices(s).filter((d) => d.device.name.trim() && Object.keys(d.device.pictures).length)
+  const work = edited.length ? edited : [{ id: idOf(s), device: s.device!, files: s.files }]
+  const files: Record<string, Uint8Array> = {}
+  for (const { id, device, files: own } of work) {
+    files[`devices/${id}/device.json`] = strToU8(deviceJson(device))
+    for (const name of Object.keys(device.pictures)) files[`devices/${id}/${name}`] = await bytesOf(device, own, name)
+  }
+  const name = work.length === 1 ? work[0].id.replace('/', ' - ') : 'devices'
+  download(`${name}.zip`, new Blob([zipSync(files)], { type: 'application/zip' }))
 }
 
 const dataUrl = (file: File) => new Promise<string>((resolve, reject) => {
@@ -234,6 +270,9 @@ export async function discardDraft() {
   const s = get()
   dropDraft(idOf(s))
   await loadLibrary()
+  const kept = { ...s.kept }
+  delete kept[keyOf(s)]
+  set({ kept, original: null })
   if (s.device?.id) await openDevice(s.device.id)
 }
 

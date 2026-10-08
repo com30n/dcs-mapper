@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { describe, expect, it, vi } from 'vitest'
 import type { PadFrame } from '../gamepad/pads'
 import { emptyDevice } from './model'
-import { moveInView, padFrame, placeInView, useEditor } from './store'
+import { editedDevices, moveInView, moveMark, openDevice, padFrame, placeInView, useEditor } from './store'
 import type { Device } from '../data/types'
 
 function frame(index: number, axes: number[], fresh: string[] = []): PadFrame {
@@ -45,5 +47,21 @@ describe('placing numbers on the view the mapper shows', () => {
     useEditor.setState({ device: layered(), mode: 'buttons', view: 0, whole: 0, selected: 'JOY_BTN1' })
     placeInView(75, 25)
     expect(marks()).toEqual({ 'panel.png': [], 'grip.png': [{ input: 'JOY_BTN2', x: 120, y: -20 }, { input: 'JOY_BTN1', x: 50, y: 50 }] })
+  })
+})
+
+describe('editing several devices in one go', () => {
+  const repo = resolve(import.meta.dirname, '..', '..', '..')
+  const serve = () => vi.stubGlobal('fetch', async (path: string) => new Response(readFileSync(resolve(repo, decodeURIComponent(path.replace(/^\.?\//, ''))))))
+
+  it('keeps the moved numbers of a device while another one is open', async () => {
+    serve()
+    await openDevice('MOZA/AB9 + MH16')
+    moveMark('JOY_BTN1', 1, 2)
+    await openDevice('MOZA/MTQ + TQF')
+    expect(editedDevices(useEditor.getState()).map((d) => d.id)).toEqual(['MOZA/AB9 + MH16'])
+    await openDevice('MOZA/AB9 + MH16')
+    const mark = useEditor.getState().device!.pictures['mh16.png'].marks!.find((m) => m.input === 'JOY_BTN1')
+    expect(mark).toEqual({ input: 'JOY_BTN1', x: 1, y: 2 })
   })
 })
