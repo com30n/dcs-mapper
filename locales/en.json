@@ -410,7 +410,7 @@
   "map.pressKeyNow": "Press the key. Hold Ctrl, Alt, Shift or Win with it for a modifier. Or click the key on the picture.",
   "map.pickMouseNow": "Click the mouse button, the wheel or a movement on the picture.",
   "map.pictureHint.keyboard": "Every key of a full-size keyboard: the browser cannot tell which keys yours has. Hover a key to see its commands.",
-  "map.pictureHint.mouse": "A five-button mouse: the browser cannot tell which buttons yours has. The left button stays for clicking in the cockpit.",
+  "map.pictureHint.mouse": "L, R — left and right button, M — wheel click, Z — wheel, X and Y — moving the mouse, 4 and 5 — side buttons. The browser cannot tell which buttons your mouse has.",
   "map.pointedAt": "under the pointer",
   "map.showColumn": "Show the {name} in the table",
   "editor.wholeView": "{name} — as in the mapper",

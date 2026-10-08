@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import { markLabel } from '../../dcs/combos'
 import { KEYBOARD_ROWS, KEYBOARD_WIDTH, MOUSE_INPUTS } from '../../dcs/keyboard'
 import type { Role } from '../../data/types'
 import { usePads } from '../../gamepad/store'
@@ -40,9 +41,9 @@ function KeyboardPicture({ info }: { info: (input: string) => MarkInfo }) {
   )
 }
 
-const MOUSE: Record<string, [string, number, number]> = {
-  MOUSE_BTN1: ['L', 95, 85], MOUSE_BTN2: ['R', 205, 85], MOUSE_BTN3: ['3', 150, 40], MOUSE_Z: ['Z', 150, 128],
-  MOUSE_BTN4: ['4', 22, 205], MOUSE_BTN5: ['5', 22, 245], MOUSE_X: ['X', 150, 300], MOUSE_Y: ['Y', 150, 345],
+const MOUSE: Record<string, [number, number]> = {
+  MOUSE_BTN1: [95, 85], MOUSE_BTN2: [205, 85], MOUSE_BTN3: [150, 40], MOUSE_Z: [150, 128],
+  MOUSE_BTN4: [22, 205], MOUSE_BTN5: [22, 245], MOUSE_X: [150, 300], MOUSE_Y: [150, 345],
 }
 
 function MousePicture({ info }: { info: (input: string) => MarkInfo }) {
@@ -54,11 +55,11 @@ function MousePicture({ info }: { info: (input: string) => MarkInfo }) {
         <rect x="136" y="60" width="28" height="56" rx="14" className={styles.wheel} />
       </svg>
       {MOUSE_INPUTS.map((input) => {
-        const [label, x, y] = MOUSE[input]
+        const [x, y] = MOUSE[input]
         const i = info(input)
         return (
           <button key={input} type="button" className={cx(styles.dot, styles[i.kind], i.lit && styles.lit, i.wrong && styles.wrong)}
-            style={{ left: pct(x, 300), top: pct(y, 420) }} title={i.title} aria-label={i.title} aria-disabled={i.wrong || undefined} onClick={() => press(input)}>{label}</button>
+            style={{ left: pct(x, 300), top: pct(y, 420) }} title={i.title} aria-label={i.title} aria-disabled={i.wrong || undefined} onClick={() => press(input)}>{markLabel(input)}</button>
         )
       })}
     </div>
