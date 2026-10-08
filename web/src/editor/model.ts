@@ -74,6 +74,17 @@ export function layerAt(device: Device, frame: Frame, x: number, y: number) {
   return null
 }
 
+const ALIGN = 0.5
+
+export function alignedWith(marks: Pick<Mark, 'input' | 'x' | 'y'>[], point: { x: number; y: number }, skip?: string) {
+  const others = marks.filter((m) => m.input !== skip)
+  const nearest = (key: 'x' | 'y') => {
+    const best = others.map((m) => m[key]).sort((a, b) => Math.abs(a - point[key]) - Math.abs(b - point[key]))[0]
+    return best !== undefined && Math.abs(best - point[key]) <= ALIGN ? best : null
+  }
+  return { x: nearest('x'), y: nearest('y') }
+}
+
 export const nextOpen = (order: string[], placed: Set<string>) => order.find((input) => !placed.has(input)) ?? null
 
 export const cropOf = (frame: Frame | null): Required<Crop> | null =>

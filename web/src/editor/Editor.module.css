@@ -72,3 +72,8 @@
 .ghost { opacity: 0.35; background: transparent; color: var(--ink-2); border: 2px dashed var(--ink-2); pointer-events: none; cursor: default; }
 .ghostLines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
 .ghostLines line { stroke: var(--blue); stroke-width: 1.5; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; opacity: 0.7; }
+.guideV, .guideH { position: absolute; z-index: 0; pointer-events: none; background: rgba(86, 96, 112, 0.55); }
+.guideV { top: 0; bottom: 0; width: 1px; }
+.guideH { left: 0; right: 0; height: 1px; }
+.guideOn { background: var(--blue); box-shadow: 0 0 0 1px rgba(27, 79, 216, 0.25); }
+.guideText { position: absolute; z-index: 2; pointer-events: none; transform: translate(10px, 10px); padding: 1px 6px; border-radius: 4px; background: rgba(20, 24, 30, 0.75); color: #fff; font: 500 11px var(--mono); white-space: nowrap; }

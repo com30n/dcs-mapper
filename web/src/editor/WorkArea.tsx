@@ -2,14 +2,14 @@ import { useRef, useState, type PointerEvent, type MouseEvent } from 'react'
 import { inputLabel, isAxisKey, markLabel } from '../dcs/combos'
 import { pictureUrl } from '../data/load'
 import { frameLayout } from '../data/frame'
-import type { Crop, Frame } from '../data/types'
+import type { Crop, Frame, Mark } from '../data/types'
 import { useWords } from '../i18n/i18n'
 import { Button } from '../ui/Button'
 import { cx } from '../ui/cx'
 import { DevicePicture } from '../ui/DevicePicture'
 import { PictureInput } from './About'
 import styles from './Editor.module.css'
-import { changeCount, cropOf, fitCrop, markExtent, marksOf, viewMarks } from './model'
+import { alignedWith, changeCount, cropOf, fitCrop, markExtent, marksOf, viewMarks } from './model'
 import { addPictureFile, allInputs, frameOf, moveInView, moveMark, place, placeInView, placedInputs, resetMarks, select, setCrop, setMode, takeOff, useEditor, type Mode } from './store'
 
 const MODES: Mode[] = ['buttons', 'card', 'views']
@@ -70,6 +70,7 @@ function Canvas({ picture }: { picture: string }) {
   const drag = useRef<Drag | null>(null)
   const startedOnItem = useRef(false)
   const [held, setHeld] = useState<Required<Crop> | null>(null)
+  const [pointer, setPointer] = useState<Pointer | null>(null)
   const [width, height] = device.pictures[picture].size
   const crop = s.mode === 'buttons' ? null : cropOf(frameOf(s))
   const fresh = s.mode === 'buttons' ? markExtent(marksOf(device, picture)) : FULL
@@ -88,10 +89,12 @@ function Canvas({ picture }: { picture: string }) {
   }
   const onMove = (e: PointerEvent) => {
     const what = drag.current
-    if (!what) return
     const p = point(e)
+    const here = s.mode === 'buttons' ? pointerAt(marksOf(device, picture), p, what && what !== 'corner' && 'mark' in what ? what.mark : undefined) : null
+    setPointer(here)
+    if (!what) return
     if (what === 'corner') { if (crop) setCrop(fitCrop({ ...crop, w: p.x - crop.x, h: p.y - crop.y })) }
-    else if ('mark' in what) moveMark(what.mark, p.x, p.y)
+    else if ('mark' in what) moveMark(what.mark, here!.x, here!.y)
     else if (crop) setCrop(fitCrop({ ...crop, x: Math.max(0, p.x - what.dx), y: Math.max(0, p.y - what.dy) }))
   }
   const onClick = (e: MouseEvent) => {
@@ -102,12 +105,13 @@ function Canvas({ picture }: { picture: string }) {
   }
   return (
     <div ref={box} className={cx(styles.canvas, s.mode === 'buttons' && styles.placing)} style={{ aspectRatio: `${width * area.w} / ${height * area.h}`, width: `min(100%, calc((100vh - 440px) * ${width * area.w / (height * area.h)}))` }}
-      onPointerMove={onMove} onPointerUp={() => { drag.current = null; setHeld(null) }} onPointerCancel={() => { drag.current = null; setHeld(null) }} onClick={onClick}>
+      onPointerMove={onMove} onPointerLeave={() => setPointer(null)} onPointerUp={() => { drag.current = null; setHeld(null) }} onPointerCancel={() => { drag.current = null; setHeld(null) }} onClick={onClick}>
       <img src={pictureUrl(device, picture)} alt="" draggable={false}
         style={{ ...at(0, 0), width: `${10000 / area.w}%`, height: `${10000 / area.h}%` }} />
       {s.mode === 'buttons' && s.original && (
         <Ghosts area={area} moved={movedFrom(marksOf(s.original, picture).map((m) => ({ ...m, key: m.input })), marksOf(device, picture).map((m) => ({ ...m, key: m.input })))} />
       )}
+      {s.mode === 'buttons' && <Guides pointer={pointer} area={area} />}
       {s.mode === 'buttons' && marksOf(device, picture).map((m) => (
         <button key={m.input} type="button" className={cx(styles.mark, isAxisKey(m.input) && styles.axisMark, s.selected === m.input && styles.selected)}
           style={at(m.x, m.y)} title={inputLabel(m.input)} aria-label={inputLabel(m.input)} aria-pressed={s.selected === m.input}
@@ -129,6 +133,7 @@ function ViewCanvas({ view }: { view: Frame }) {
   const startedOnItem = useRef(false)
   const marks = viewMarks(device, view)
   const [held, setHeld] = useState<Required<Crop> | null>(null)
+  const [pointer, setPointer] = useState<Pointer | null>(null)
   const area = held ?? markExtent(marks)
   const { width, height } = frameLayout(device, view)
   const point = (e: PointerEvent | MouseEvent) => {
@@ -139,8 +144,13 @@ function ViewCanvas({ view }: { view: Frame }) {
   const stop = () => { drag.current = null; setHeld(null) }
   return (
     <div ref={box} className={cx(styles.canvas, styles.placing)} style={{ aspectRatio: `${width * area.w} / ${height * area.h}`, width: `min(100%, calc((100vh - 440px) * ${width * area.w / (height * area.h)}))` }}
-      onPointerMove={(e) => { const d = drag.current; if (d) { const p = point(e); moveInView(d.layer, d.input, p.x, p.y) } }}
-      onPointerUp={stop} onPointerCancel={stop}
+      onPointerMove={(e) => {
+        const d = drag.current
+        const here = pointerAt(marks, point(e), d?.input)
+        setPointer(here)
+        if (d) moveInView(d.layer, d.input, here.x, here.y)
+      }}
+      onPointerLeave={() => setPointer(null)} onPointerUp={stop} onPointerCancel={stop}
       onClick={(e) => { if (startedOnItem.current) { startedOnItem.current = false; return } const p = point(e); placeInView(p.x, p.y) }}>
       <div className={styles.whole} style={{ ...at(0, 0), width: `${10000 / area.w}%`, height: `${10000 / area.h}%` }}>
         <DevicePicture device={device} frame={view} />
@@ -148,6 +158,7 @@ function ViewCanvas({ view }: { view: Frame }) {
       {s.original && (
         <Ghosts area={area} moved={movedFrom(viewMarks(s.original, view).map((m) => ({ ...m, key: `${m.layer}:${m.input}` })), marks.map((m) => ({ ...m, key: `${m.layer}:${m.input}` })))} />
       )}
+      <Guides pointer={pointer} area={area} />
       {marks.map((m) => (
         <button key={`${m.layer}:${m.input}`} type="button" className={cx(styles.mark, isAxisKey(m.input) && styles.axisMark, s.selected === m.input && styles.selected)}
           style={at(m.x, m.y)} title={`${inputLabel(m.input)} · ${m.picture}`} aria-label={inputLabel(m.input)} aria-pressed={s.selected === m.input}
@@ -163,6 +174,30 @@ function ViewCanvas({ view }: { view: Frame }) {
         </button>
       ))}
     </div>
+  )
+}
+
+interface Pointer {
+  x: number
+  y: number
+  aligned: { x: number | null; y: number | null }
+}
+
+function pointerAt(marks: Pick<Mark, 'input' | 'x' | 'y'>[], p: { x: number; y: number }, skip?: string): Pointer {
+  const aligned = alignedWith(marks, p, skip)
+  return { x: aligned.x ?? p.x, y: aligned.y ?? p.y, aligned }
+}
+
+function Guides({ pointer, area }: { pointer: Pointer | null; area: Required<Crop> }) {
+  if (!pointer) return null
+  const left = (pointer.x - area.x) / area.w * 100
+  const top = (pointer.y - area.y) / area.h * 100
+  return (
+    <>
+      <span className={cx(styles.guideV, pointer.aligned.x !== null && styles.guideOn)} style={{ left: `${left}%` }} aria-hidden="true" />
+      <span className={cx(styles.guideH, pointer.aligned.y !== null && styles.guideOn)} style={{ top: `${top}%` }} aria-hidden="true" />
+      <span className={styles.guideText} style={{ left: `${left}%`, top: `${top}%` }} aria-hidden="true">{pointer.x.toFixed(1)} · {pointer.y.toFixed(1)}</span>
+    </>
   )
 }
 
