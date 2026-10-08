@@ -52,6 +52,11 @@ describe('device editor model', () => {
     expect(deviceJson(d).startsWith('{\n "name"')).toBe(true)
   })
 
+  it('keeps the fields of device.json the editor does not know', () => {
+    const d = { ...device(), unverified: ['axes'] }
+    expect(JSON.parse(deviceJson(d)).unverified).toEqual(['axes'])
+  })
+
   it('gives a new device its first picture as card and view', () => {
     const d = addPicture(emptyDevice(), 'grip.png', [800, 600], 'blob:y')
     expect([d.card, d.views]).toEqual([{ picture: 'grip.png' }, [{ name: 'Main', picture: 'grip.png' }]])

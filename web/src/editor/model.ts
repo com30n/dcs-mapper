@@ -66,6 +66,8 @@ export function deviceId(maker: string, name: string) {
   return `${vendor}/${folderName(name.replace(prefix, '')) || 'Device'}`
 }
 
+const WRITTEN = new Set(['id', 'generic', 'name', 'role', 'dcsName', 'axes', 'preset', 'pictures', 'card', 'views'])
+
 export function deviceJson(device: Device): string {
   const pictures = Object.fromEntries(Object.entries(device.pictures).map(([name, p]) => {
     const marks = sortMarks(p.marks ?? [])
@@ -77,6 +79,7 @@ export function deviceJson(device: Device): string {
     ...(device.axes?.length ? { axes: device.axes } : {}),
     ...(device.preset !== undefined ? { preset: device.preset } : {}),
     pictures, card: device.card, views,
+    ...Object.fromEntries(Object.entries(device).filter(([key]) => !WRITTEN.has(key))),
   }
   return `${JSON.stringify(out, null, 1)}\n`
 }
