@@ -429,5 +429,6 @@
   "menu.zoomOut": "Zoom out",
   "menu.putHere": "Put {input} here",
   "editor.grid": "Grid",
-  "editor.gridHint": "Lines every 5% of the picture to line numbers up by eye."
+  "editor.gridHint": "Lines every 5% of the picture to line numbers up by eye.",
+  "export.enlarge": "Click to see it bigger"
 }
