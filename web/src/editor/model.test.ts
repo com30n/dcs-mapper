@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Device } from '../data/types'
-import { addPicture, changeCount, dcsNameOf, deviceId, deviceJson, emptyDevice, fitCrop, layerAt, markExtent, nextOpen, toPicture, viewMarks, padInputs, placeMark, removeMark, sortInputs, withCrop } from './model'
+import { addPicture, changeCount, dcsNameOf, deviceId, deviceJson, emptyDevice, alignedWith, fitCrop, layerAt, markExtent, nextOpen, toPicture, viewMarks, padInputs, placeMark, removeMark, sortInputs, withCrop } from './model'
 
 const device = (): Device => ({
   id: 'MOZA/AB9 + MH16', name: 'MOZA AB9 FFB Base + MH16 grip', role: 'stick', dcsName: 'MOZA AB9 FFB Base',
@@ -91,5 +91,19 @@ describe('numbers on a view put together from several pictures', () => {
   it('turns a point of the view back into the picture it belongs to', () => {
     expect(toPicture(layered, view, 1, 110, -10)).toEqual({ x: 120, y: -20 })
     expect([layerAt(layered, view, 25, 50), layerAt(layered, view, 75, 20), layerAt(layered, view, 75, 80)]).toEqual([0, 1, null])
+  })
+})
+
+describe('guide lines under the pointer', () => {
+  const marks = [{ input: 'JOY_BTN1', x: 20, y: 40 }, { input: 'JOY_BTN2', x: 60, y: 70 }]
+
+  it('lights a line that passes through the centre of another number', () => {
+    expect(alignedWith(marks, { x: 20.2, y: 55 })).toEqual({ x: 20, y: null })
+    expect(alignedWith(marks, { x: 33, y: 69.8 })).toEqual({ x: null, y: 70 })
+    expect(alignedWith(marks, { x: 33, y: 55 })).toEqual({ x: null, y: null })
+  })
+
+  it('does not line a number up with itself while it is dragged', () => {
+    expect(alignedWith(marks, { x: 20, y: 40 }, 'JOY_BTN1')).toEqual({ x: null, y: null })
   })
 })
