@@ -15,6 +15,7 @@ import { cx } from '../../ui/cx'
 import { DevicePicture, type PlacedMark } from '../../ui/DevicePicture'
 import { Notice } from '../../ui/Notice'
 import { useWidth } from '../../ui/useWidth'
+import { ZoomBox } from '../../ui/ZoomBox'
 import { isBuiltIn } from '../../state/lookup'
 import { BuiltInPicture } from './BuiltInPicture'
 import { calloutShown, keyLines, type KeyLine } from './keyLines'
@@ -129,11 +130,11 @@ export function MapPicture({ s, entry, highlight }: { s: SessionState; entry: En
   const callouts = (input: string) => (calloutShown(input, { focus, hovered, highlight }) ? keyLines(s, entry, input) : null)
   return (
     <>
-      {builtIn && <BuiltInPicture role={device.role} info={info} />}
+      {builtIn && <ZoomBox key={device.id}><BuiltInPicture role={device.role} info={info} /></ZoomBox>}
       {device.views.map((view, i) => (
         <Fragment key={i}>
           {device.views.length > 1 && <span className="eyebrow">{view.name}</span>}
-          <CalloutView device={device} frame={view} info={info} callouts={callouts} focus={hovered[0] ?? focus} />
+          <ZoomBox key={`${device.id}:${i}`}><CalloutView device={device} frame={view} info={info} callouts={callouts} focus={hovered[0] ?? focus} /></ZoomBox>
         </Fragment>
       ))}
       <div className={styles.legend}>
@@ -142,7 +143,7 @@ export function MapPicture({ s, entry, highlight }: { s: SessionState; entry: En
         ))}
         <span><i className={cx(styles.dot, styles.used, styles.lit)} />{t('legend.open')}</span>
       </div>
-      <p className="muted small">{t(builtIn ? `map.pictureHint.${device.role}` : 'map.pictureHint')}</p>
+      <p className="muted small">{t(builtIn ? `map.pictureHint.${device.role}` : 'map.pictureHint')} {t('zoom.hint')}</p>
     </>
   )
 }
