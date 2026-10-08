@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent, type ReactNode } from 'react'
 import { useWords } from '../i18n/i18n'
 import { cx } from './cx'
+import { RightMenu } from './RightMenu'
 import { NO_ZOOM, panBy, zoomAt, type Zoom } from './zoom'
 import styles from './ZoomBox.module.css'
 
@@ -50,17 +51,34 @@ export function ZoomBox({ children, className }: { children: ReactNode; classNam
     setZoom(panBy(current.current, size(), dx, dy))
   }
   const up = () => { setPanning(false); setTimeout(() => { drag.current = null }) }
+  const zoomBy = (x: number, y: number, step: number) => {
+    const z = current.current
+    if (z.scale === 1) setBase(box.current!.offsetHeight)
+    setZoom(zoomAt(z, size(), x, y, step))
+  }
+  const menu = (event: MouseEvent) => {
+    const r = box.current!.getBoundingClientRect()
+    const x = event.clientX - r.left
+    const y = event.clientY - r.top
+    return [
+      { label: t('menu.zoomIn'), run: () => zoomBy(x, y, STEP * STEP) },
+      { label: t('menu.zoomOut'), run: () => zoomBy(x, y, 1 / (STEP * STEP)), disabled: zoom.scale === 1 },
+      { label: t('zoom.resetHint'), run: () => setZoom(NO_ZOOM), disabled: zoom.scale === 1 },
+    ]
+  }
 
   return (
-    <div ref={box} className={cx(styles.box, zoom.scale > 1 && styles.zoomed, panning && styles.panning, className)} style={zoom.scale > 1 && base ? { height: base } : undefined}
-      onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
-      onClickCapture={(event) => { if (drag.current?.moved) { event.stopPropagation(); event.preventDefault() } }}>
-      <div className={styles.content} style={{ width: `${zoom.scale * 100}%`, transform: `translate(${Math.round(zoom.x)}px, ${Math.round(zoom.y)}px)`, '--zoom': zoom.scale } as CSSProperties}>{children}</div>
-      {zoom.scale > 1 && (
-        <button type="button" className={styles.reset} onClick={() => setZoom(NO_ZOOM)} title={t('zoom.resetHint')}>
-          {Math.round(zoom.scale * 100)}% · {t('zoom.reset')}
-        </button>
-      )}
-    </div>
+    <RightMenu rest={menu}>
+      <div ref={box} className={cx(styles.box, zoom.scale > 1 && styles.zoomed, panning && styles.panning, className)} style={zoom.scale > 1 && base ? { height: base } : undefined}
+        onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
+        onClickCapture={(event) => { if (drag.current?.moved) { event.stopPropagation(); event.preventDefault() } }}>
+        <div className={styles.content} style={{ width: `${zoom.scale * 100}%`, transform: `translate(${Math.round(zoom.x)}px, ${Math.round(zoom.y)}px)`, '--zoom': zoom.scale } as CSSProperties}>{children}</div>
+        {zoom.scale > 1 && (
+          <button type="button" className={styles.reset} onClick={() => setZoom(NO_ZOOM)} title={t('zoom.resetHint')}>
+            {Math.round(zoom.scale * 100)}% · {t('zoom.reset')}
+          </button>
+        )}
+      </div>
+    </RightMenu>
   )
 }

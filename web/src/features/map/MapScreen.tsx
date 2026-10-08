@@ -20,6 +20,7 @@ import { Button, Chip, Chips } from '../../ui/Button'
 import { cx } from '../../ui/cx'
 import { Footer } from '../../ui/Footer'
 import { IconButton } from '../../ui/IconButton'
+import { RightMenu } from '../../ui/RightMenu'
 import { ArrowIcon, ForceIcon, HideIcon, ShowIcon, TickIcon } from '../../ui/icons'
 import { SearchField } from '../../ui/SearchField'
 import { Section, type Column } from './Fields'
@@ -273,17 +274,19 @@ export function MapScreen() {
             {toast}
           </div>
           <div className={styles.sections} role="table" aria-label={t('map.table')}>
-            <div className={fields.table} style={tableStyle}>
-              <ColumnHeads s={s} columns={columns} />
-              {search
-                ? <Section s={s} columns={columns} id="search" label={t('map.searchResults', { query: search })} all={searchResults(profile, search, tr)} collapsible={false} />
-                : shown.filter((c) => narrowed || open.includes(c.id)).map((c) => (
-                  <Section key={c.id} s={s} columns={columns} id={c.id} label={categoryLabel(c, tr)} all={commandsIn(profile, c, tr)} collapsible={!narrowed} onToggle={() => toggle(c.id)} />
-                ))}
-              {!search && !shown.some((c) => narrowed || open.includes(c.id)) && (
-                <p className={cx('muted', styles.pad)}>{t(narrowed ? 'map.noCommands' : 'map.openHint')}</p>
-              )}
-            </div>
+            <RightMenu>
+              <div className={fields.table} style={tableStyle}>
+                <ColumnHeads s={s} columns={columns} />
+                {search
+                  ? <Section s={s} columns={columns} id="search" label={t('map.searchResults', { query: search })} all={searchResults(profile, search, tr)} collapsible={false} />
+                  : shown.filter((c) => narrowed || open.includes(c.id)).map((c) => (
+                    <Section key={c.id} s={s} columns={columns} id={c.id} label={categoryLabel(c, tr)} all={commandsIn(profile, c, tr)} collapsible={!narrowed} onToggle={() => toggle(c.id)} />
+                  ))}
+                {!search && !shown.some((c) => narrowed || open.includes(c.id)) && (
+                  <p className={cx('muted', styles.pad)}>{t(narrowed ? 'map.noCommands' : 'map.openHint')}</p>
+                )}
+              </div>
+            </RightMenu>
           </div>
         </section>
         <aside className={styles.dock} aria-label={t('map.picture')}>

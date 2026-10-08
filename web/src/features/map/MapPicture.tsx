@@ -19,6 +19,7 @@ import { ZoomBox } from '../../ui/ZoomBox'
 import { isBuiltIn } from '../../state/lookup'
 import { BuiltInPicture } from './BuiltInPicture'
 import { calloutShown, keyLines, type KeyLine } from './keyLines'
+import { useMarkMenu } from './markMenu'
 import styles from './MapPicture.module.css'
 
 type MarkKind = KeyKind | 'sel'
@@ -41,9 +42,10 @@ export interface MarkInfo {
 
 function Mark({ mark, info }: { mark: PlacedMark; info: MarkInfo }) {
   const live = usePads((p) => p.live.includes(mark.input))
+  const menu = useMarkMenu()
   return (
     <button type="button" className={cx(styles.mark, styles[info.kind], isAxisKey(mark.input) && styles.axis, info.lit && styles.lit, live && styles.live, info.wrong && styles.wrong)}
-      style={{ left: pct(mark.x), top: pct(mark.y) }} title={info.title} aria-label={info.title} aria-disabled={info.wrong || undefined} onClick={() => press(mark.input)}>
+      style={{ left: pct(mark.x), top: pct(mark.y) }} title={info.title} aria-label={info.title} aria-disabled={info.wrong || undefined} onClick={() => press(mark.input)} onContextMenu={menu(mark.input)}>
       {markLabel(mark.input)}
     </button>
   )

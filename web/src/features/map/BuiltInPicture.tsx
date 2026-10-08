@@ -7,6 +7,7 @@ import { press } from '../../state/bindings'
 import { cx } from '../../ui/cx'
 import styles from './BuiltInPicture.module.css'
 import type { MarkInfo } from './MapPicture'
+import { useMarkMenu } from './markMenu'
 
 const GAP = 0.25
 const ROWS = KEYBOARD_ROWS.length + GAP
@@ -24,9 +25,10 @@ const pct = (v: number, of: number) => `${(v / of) * 100}%`
 
 function Key({ id, label, info, style }: { id: string; label: string; info: MarkInfo; style: CSSProperties }) {
   const live = usePads((p) => p.live.includes(id))
+  const menu = useMarkMenu()
   return (
     <button type="button" className={cx(styles.key, styles[info.kind], info.lit && styles.lit, live && styles.live, info.wrong && styles.wrong)}
-      style={style} title={info.title} aria-label={info.title} aria-disabled={info.wrong || undefined} onClick={() => press(id)}>{label}</button>
+      style={style} title={info.title} aria-label={info.title} aria-disabled={info.wrong || undefined} onClick={() => press(id)} onContextMenu={menu(id)}>{label}</button>
   )
 }
 
@@ -47,6 +49,7 @@ const MOUSE: Record<string, [number, number]> = {
 }
 
 function MousePicture({ info }: { info: (input: string) => MarkInfo }) {
+  const menu = useMarkMenu()
   return (
     <div className={styles.mouse}>
       <svg viewBox="0 0 300 420" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -59,7 +62,7 @@ function MousePicture({ info }: { info: (input: string) => MarkInfo }) {
         const i = info(input)
         return (
           <button key={input} type="button" className={cx(styles.dot, styles[i.kind], i.lit && styles.lit, i.wrong && styles.wrong)}
-            style={{ left: pct(x, 300), top: pct(y, 420) }} title={i.title} aria-label={i.title} aria-disabled={i.wrong || undefined} onClick={() => press(input)}>{markLabel(input)}</button>
+            style={{ left: pct(x, 300), top: pct(y, 420) }} title={i.title} aria-label={i.title} aria-disabled={i.wrong || undefined} onClick={() => press(input)} onContextMenu={menu(input)}>{markLabel(input)}</button>
         )
       })}
     </div>

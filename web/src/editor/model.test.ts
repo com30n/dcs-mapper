@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Device } from '../data/types'
-import { addPicture, changeCount, dcsNameOf, deviceId, deviceJson, emptyDevice, alignedWith, fitCrop, layerAt, markExtent, nextOpen, toPicture, viewMarks, padInputs, placeMark, removeMark, sortInputs, withCrop } from './model'
+import { addPicture, changeCount, dcsNameOf, deviceId, deviceJson, emptyDevice, alignedWith, fitCrop, gridLines, layerAt, markExtent, nextOpen, toPicture, viewMarks, padInputs, placeMark, removeMark, sortInputs, withCrop } from './model'
 
 const device = (): Device => ({
   id: 'MOZA/AB9 + MH16', name: 'MOZA AB9 FFB Base + MH16 grip', role: 'stick', dcsName: 'MOZA AB9 FFB Base',
@@ -105,5 +105,15 @@ describe('guide lines under the pointer', () => {
 
   it('does not line a number up with itself while it is dragged', () => {
     expect(alignedWith(marks, { x: 20, y: 40 }, 'JOY_BTN1')).toEqual({ x: null, y: null })
+  })
+})
+
+describe('grid over the picture', () => {
+  it('draws a line every step inside the shown area', () => {
+    expect(gridLines({ x: 0, y: 0, w: 100, h: 100 }, 25)).toEqual({ x: [25, 50, 75], y: [25, 50, 75] })
+  })
+
+  it('keeps lines on the picture’s own steps when the area reaches past the picture', () => {
+    expect(gridLines({ x: -12, y: 3, w: 40, h: 30 }, 10)).toEqual({ x: [-10, 0, 10, 20], y: [10, 20, 30] })
   })
 })
