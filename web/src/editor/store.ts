@@ -7,7 +7,7 @@ import type { Crop, Device, DeviceIndexEntry, Frame } from '../data/types'
 import { AXES } from '../dcs/combos'
 import { hasHat, type PadFrame } from '../gamepad/pads'
 import { download } from '../state/export'
-import { addPicture, cropOf, dcsNameOf, deviceId, deviceJson, emptyDevice, folderName, marksOf, nextOpen, padInputs, placeMark, removeMark, sortInputs, withCrop } from './model'
+import { addPicture, cropOf, dcsNameOf, deviceId, deviceJson, emptyDevice, folderName, layerAt, marksOf, nextOpen, padInputs, placeMark, removeMark, sortInputs, toPicture, viewMarks, withCrop } from './model'
 
 export type Mode = 'buttons' | 'card' | 'views'
 
@@ -19,6 +19,7 @@ export interface EditorState {
   files: Record<string, File>
   mode: Mode
   picture: string | null
+  whole: number | null
   view: number
   selected: string | null
   reported: string[]
@@ -27,7 +28,7 @@ export interface EditorState {
 }
 
 export const useEditor = create<EditorState>()(() => ({
-  library: [], original: null, device: null, maker: '', files: {}, mode: 'buttons', picture: null, view: 0,
+  library: [], original: null, device: null, maker: '', files: {}, mode: 'buttons', picture: null, whole: null, view: 0,
   selected: null, reported: [], padName: null, message: '',
 }))
 
@@ -48,18 +49,20 @@ export async function loadLibrary() {
 export async function openDevice(id: string) {
   const device = await loadDevice(id)
   const picture = Object.keys(device.pictures).find((name) => marksOf(device, name).length) ?? Object.keys(device.pictures)[0] ?? null
-  set({ original: device, device, maker: id.split('/')[0], files: {}, mode: 'buttons', picture, view: 0, selected: null, message: '' })
+  const whole = device.views.findIndex((v) => v.layers)
+  set({ original: device, device, maker: id.split('/')[0], files: {}, mode: 'buttons', picture, whole: whole < 0 ? null : whole, view: 0, selected: null, message: '' })
 }
 
 export function newDevice() {
-  set({ original: emptyDevice(), device: emptyDevice(), maker: '', files: {}, mode: 'buttons', picture: null, view: 0, selected: null, reported: [], message: '' })
+  set({ original: emptyDevice(), device: emptyDevice(), maker: '', files: {}, mode: 'buttons', picture: null, whole: null, view: 0, selected: null, reported: [], message: '' })
 }
 
 export const setMeta = (patch: Partial<Pick<Device, 'name' | 'role' | 'dcsName'>>) => set({ device: { ...get().device!, ...patch } })
 export const setMaker = (maker: string) => set({ maker })
 export const setMode = (mode: Mode) => set({ mode })
 export const select = (input: string | null) => set({ selected: input })
-export const showPicture = (picture: string) => set({ picture })
+export const showPicture = (picture: string) => set({ picture, whole: null })
+export const showWhole = (view: number) => set({ whole: view })
 export const showView = (view: number) => set({ view })
 
 async function sizeOf(file: File, url: string): Promise<[number, number]> {
@@ -79,7 +82,7 @@ export async function addPictureFile(file: File) {
   for (let i = 2; s.device!.pictures[name]; i++) name = `${base}-${i}${ext}`
   const url = URL.createObjectURL(file)
   const size = await sizeOf(file, url)
-  set({ device: addPicture(get().device!, name, size, url), files: { ...get().files, [name]: file }, picture: name, message: '' })
+  set({ device: addPicture(get().device!, name, size, url), files: { ...get().files, [name]: file }, picture: name, whole: null, message: '' })
 }
 
 export function place(x: number, y: number) {
@@ -91,6 +94,35 @@ export function place(x: number, y: number) {
   set({ device, selected: next })
 }
 
+const wholeView = (s: EditorState) => (s.device && s.whole !== null ? s.device.views[s.whole] ?? null : null)
+
+const layersOf = (s: EditorState) => wholeView(s)?.layers ?? []
+
+export function placeInView(x: number, y: number) {
+  const s = get()
+  const view = wholeView(s)
+  if (!s.device || !view || !s.selected) return
+  const holding = viewMarks(s.device, view).find((m) => m.input === s.selected)
+  const layer = layerAt(s.device, view, x, y) ?? holding?.layer ?? null
+  if (layer === null) return
+  const target = layersOf(s)[layer].picture
+  const wasPlaced = placedInputs(s).has(s.selected)
+  let device = s.device
+  for (const other of new Set(layersOf(s).map((l) => l.picture))) if (other !== target) device = removeMark(device, other, s.selected)
+  const p = toPicture(s.device, view, layer, x, y)
+  device = placeMark(device, target, s.selected, p.x, p.y)
+  const next = wasPlaced ? s.selected : nextOpen(allInputs({ ...s, device }), placedInputs({ ...s, device }))
+  set({ device, selected: next })
+}
+
+export function moveInView(layer: number, input: string, x: number, y: number) {
+  const s = get()
+  const view = wholeView(s)
+  if (!s.device || !view) return
+  const p = toPicture(s.device, view, layer, x, y)
+  set({ device: placeMark(s.device, layersOf(s)[layer].picture, input, p.x, p.y) })
+}
+
 export function moveMark(input: string, x: number, y: number) {
   const s = get()
   if (s.device && s.picture) set({ device: placeMark(s.device, s.picture, input, x, y) })
@@ -98,7 +130,8 @@ export function moveMark(input: string, x: number, y: number) {
 
 export function takeOff(input: string) {
   const s = get()
-  if (s.device && s.picture) set({ device: removeMark(s.device, s.picture, input) })
+  if (s.device && wholeView(s)) set({ device: [...new Set(layersOf(s).map((l) => l.picture))].reduce((d, picture) => removeMark(d, picture, input), s.device) })
+  else if (s.device && s.picture) set({ device: removeMark(s.device, s.picture, input) })
 }
 
 export function resetMarks() {
