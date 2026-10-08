@@ -1,5 +1,6 @@
 .box { position: relative; overflow: hidden; touch-action: pan-y; }
-.content { transform-origin: 0 0; will-change: transform; }
+.content { transform-origin: 0 0; }
+.zoomed .content { position: absolute; left: 0; top: 0; }
 .zoomed { cursor: grab; touch-action: none; }
 .panning { cursor: grabbing; user-select: none; }
 .reset { position: absolute; right: 8px; top: 8px; z-index: 5; min-height: 32px; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--surface); color: var(--ink); font: 600 13px var(--sans); box-shadow: 0 2px 8px rgba(20, 24, 30, 0.12); }

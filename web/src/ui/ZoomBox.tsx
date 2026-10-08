@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react'
 import { useWords } from '../i18n/i18n'
 import { cx } from './cx'
 import { NO_ZOOM, panBy, zoomAt, type Zoom } from './zoom'
@@ -15,6 +15,7 @@ export function ZoomBox({ children, className }: { children: ReactNode; classNam
   const setZoom = (next: Zoom) => { current.current = next; setZoomState(next) }
   const [panning, setPanning] = useState(false)
   const drag = useRef<{ x: number; y: number; moved: boolean } | null>(null)
+  const [base, setBase] = useState(0)
   const size = () => ({ width: box.current!.clientWidth, height: box.current!.clientHeight })
 
   useEffect(() => {
@@ -26,6 +27,7 @@ export function ZoomBox({ children, className }: { children: ReactNode; classNam
       const next = zoomAt(z, size(), event.clientX - r.left, event.clientY - r.top, event.deltaY < 0 ? STEP : 1 / STEP)
       if (next.scale === z.scale && z.scale === 1) return
       event.preventDefault()
+      if (z.scale === 1) setBase(el.offsetHeight)
       current.current = next
       setZoomState(next)
     }
@@ -50,10 +52,10 @@ export function ZoomBox({ children, className }: { children: ReactNode; classNam
   const up = () => { setPanning(false); setTimeout(() => { drag.current = null }) }
 
   return (
-    <div ref={box} className={cx(styles.box, zoom.scale > 1 && styles.zoomed, panning && styles.panning, className)}
+    <div ref={box} className={cx(styles.box, zoom.scale > 1 && styles.zoomed, panning && styles.panning, className)} style={zoom.scale > 1 && base ? { height: base } : undefined}
       onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
       onClickCapture={(event) => { if (drag.current?.moved) { event.stopPropagation(); event.preventDefault() } }}>
-      <div className={styles.content} style={{ transform: `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.scale})` }}>{children}</div>
+      <div className={styles.content} style={{ width: `${zoom.scale * 100}%`, transform: `translate(${Math.round(zoom.x)}px, ${Math.round(zoom.y)}px)`, '--zoom': zoom.scale } as CSSProperties}>{children}</div>
       {zoom.scale > 1 && (
         <button type="button" className={styles.reset} onClick={() => setZoom(NO_ZOOM)} title={t('zoom.resetHint')}>
           {Math.round(zoom.scale * 100)}% · {t('zoom.reset')}
