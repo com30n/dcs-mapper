@@ -8,10 +8,11 @@ import { cx } from '../ui/cx'
 import { DevicePicture } from '../ui/DevicePicture'
 import { PictureInput } from './About'
 import styles from './Editor.module.css'
-import { changeCount, cropOf, fitCrop, marksOf } from './model'
+import { changeCount, cropOf, fitCrop, markExtent, marksOf } from './model'
 import { addPictureFile, allInputs, frameOf, moveMark, place, placedInputs, resetMarks, select, setCrop, setMode, takeOff, useEditor, type Mode } from './store'
 
 const MODES: Mode[] = ['buttons', 'card', 'views']
+const FULL: Required<Crop> = { x: 0, y: 0, w: 100, h: 100 }
 
 type Drag = { mark: string } | { dx: number; dy: number } | 'corner'
 
@@ -66,14 +67,19 @@ function Canvas({ picture }: { picture: string }) {
   const box = useRef<HTMLDivElement>(null)
   const drag = useRef<Drag | null>(null)
   const startedOnItem = useRef(false)
+  const [held, setHeld] = useState<Required<Crop> | null>(null)
   const [width, height] = device.pictures[picture].size
   const crop = s.mode === 'buttons' ? null : cropOf(frameOf(s))
+  const fresh = s.mode === 'buttons' ? markExtent(marksOf(device, picture)) : FULL
+  const area = held ?? fresh
   const point = (e: PointerEvent | MouseEvent) => {
     const r = box.current!.getBoundingClientRect()
-    return { x: (e.clientX - r.left) / r.width * 100, y: (e.clientY - r.top) / r.height * 100 }
+    return { x: area.x + (e.clientX - r.left) / r.width * area.w, y: area.y + (e.clientY - r.top) / r.height * area.h }
   }
+  const at = (x: number, y: number) => ({ left: `${(x - area.x) / area.w * 100}%`, top: `${(y - area.y) / area.h * 100}%` })
   const grab = (e: PointerEvent, what: Drag) => {
     e.stopPropagation()
+    setHeld(area)
     drag.current = what
     startedOnItem.current = true
     box.current!.setPointerCapture(e.pointerId)
@@ -93,12 +99,13 @@ function Canvas({ picture }: { picture: string }) {
     place(p.x, p.y)
   }
   return (
-    <div ref={box} className={cx(styles.canvas, s.mode === 'buttons' && styles.placing)} style={{ aspectRatio: `${width} / ${height}`, width: `min(100%, calc((100vh - 440px) * ${width / height}))` }}
-      onPointerMove={onMove} onPointerUp={() => { drag.current = null }} onPointerCancel={() => { drag.current = null }} onClick={onClick}>
-      <img src={pictureUrl(device, picture)} alt="" draggable={false} />
+    <div ref={box} className={cx(styles.canvas, s.mode === 'buttons' && styles.placing)} style={{ aspectRatio: `${width * area.w} / ${height * area.h}`, width: `min(100%, calc((100vh - 440px) * ${width * area.w / (height * area.h)}))` }}
+      onPointerMove={onMove} onPointerUp={() => { drag.current = null; setHeld(null) }} onPointerCancel={() => { drag.current = null; setHeld(null) }} onClick={onClick}>
+      <img src={pictureUrl(device, picture)} alt="" draggable={false}
+        style={{ ...at(0, 0), width: `${10000 / area.w}%`, height: `${10000 / area.h}%` }} />
       {s.mode === 'buttons' && marksOf(device, picture).map((m) => (
         <button key={m.input} type="button" className={cx(styles.mark, isAxisKey(m.input) && styles.axisMark, s.selected === m.input && styles.selected)}
-          style={{ left: `${m.x}%`, top: `${m.y}%` }} title={inputLabel(m.input)} aria-label={inputLabel(m.input)} aria-pressed={s.selected === m.input}
+          style={at(m.x, m.y)} title={inputLabel(m.input)} aria-label={inputLabel(m.input)} aria-pressed={s.selected === m.input}
           onPointerDown={(e) => { select(m.input); grab(e, { mark: m.input }) }}>
           {markLabel(m.input)}
         </button>

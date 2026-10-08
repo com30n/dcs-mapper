@@ -40,6 +40,17 @@ export function removeMark(device: Device, picture: string, input: string): Devi
   return { ...device, pictures: { ...device.pictures, [picture]: { ...device.pictures[picture], marks: marksOf(device, picture).filter((m) => m.input !== input) } } }
 }
 
+const MARGIN = 4
+const two = (v: number) => Math.round(v * 100) / 100
+
+export function markExtent(marks: Mark[]): Required<Crop> {
+  const x = Math.min(0, ...marks.map((m) => m.x - MARGIN))
+  const y = Math.min(0, ...marks.map((m) => m.y - MARGIN))
+  const right = Math.max(100, ...marks.map((m) => m.x + MARGIN))
+  const bottom = Math.max(100, ...marks.map((m) => m.y + MARGIN))
+  return { x: two(x), y: two(y), w: two(right - x), h: two(bottom - y) }
+}
+
 export const nextOpen = (order: string[], placed: Set<string>) => order.find((input) => !placed.has(input)) ?? null
 
 export const cropOf = (frame: Frame | null): Required<Crop> | null =>

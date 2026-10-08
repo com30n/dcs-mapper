@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Device } from '../data/types'
-import { addPicture, changeCount, dcsNameOf, deviceId, deviceJson, emptyDevice, fitCrop, nextOpen, padInputs, placeMark, removeMark, sortInputs, withCrop } from './model'
+import { addPicture, changeCount, dcsNameOf, deviceId, deviceJson, emptyDevice, fitCrop, markExtent, nextOpen, padInputs, placeMark, removeMark, sortInputs, withCrop } from './model'
 
 const device = (): Device => ({
   id: 'MOZA/AB9 + MH16', name: 'MOZA AB9 FFB Base + MH16 grip', role: 'stick', dcsName: 'MOZA AB9 FFB Base',
@@ -66,5 +66,12 @@ describe('device editor model', () => {
     const before = device()
     const after = withCrop(placeMark(removeMark(before, 'mh16.png', 'JOY_BTN2'), 'mh16.png', 'JOY_BTN1', 1, 1).card!, { x: 0, y: 0, w: 40, h: 40 })
     expect(changeCount(before, { ...placeMark(removeMark(before, 'mh16.png', 'JOY_BTN2'), 'mh16.png', 'JOY_BTN1', 1, 1), card: after })).toBe(3)
+  })
+})
+
+describe('numbers placed beside a picture', () => {
+  it('widens the canvas to the numbers outside the picture, with room around them', () => {
+    expect(markExtent([{ input: 'JOY_BTN1', x: 50, y: 50 }])).toEqual({ x: 0, y: 0, w: 100, h: 100 })
+    expect(markExtent([{ input: 'JOY_BTN1', x: 119, y: -37.5 }, { input: 'JOY_X', x: -21.9, y: 40 }])).toEqual({ x: -25.9, y: -41.5, w: 148.9, h: 141.5 })
   })
 })
