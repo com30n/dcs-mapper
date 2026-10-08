@@ -414,5 +414,8 @@
   "map.pointedAt": "under the pointer",
   "map.showColumn": "Show the {name} in the table",
   "editor.wholeView": "{name} — as in the mapper",
-  "editor.wholeHint": "{count} pictures put together; numbers move on any of them"
+  "editor.wholeHint": "{count} pictures put together; numbers move on any of them",
+  "zoom.reset": "whole picture",
+  "zoom.resetHint": "Back to the whole picture",
+  "zoom.hint": "Scroll the mouse wheel over the picture to zoom in, drag it to move."
 }
