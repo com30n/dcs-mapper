@@ -27,12 +27,15 @@ export function inputLabel(key: string) {
   if (button) return `Btn ${button[1]}`
   const pov = /^JOY_BTN_POV(\d)_(\w+)$/.exec(key)
   if (pov) return `POV${pov[1] === '1' ? '' : pov[1]} ${POV_ARROWS[pov[2]]}`
-  const mouse = /^MOUSE_(?:BTN)?(\w+)$/.exec(key)
-  if (mouse) return mouse[1] === 'Z' ? 'Mouse wheel' : `Mouse ${mouse[1]}`
+  if (key.startsWith('MOUSE_')) return `Mouse ${markLabel(key)}`
   return key.replace(/^JOY_/, '')
 }
 
+const MOUSE_BUTTONS: Record<string, string> = { '1': 'L', '2': 'R', '3': 'M' }
+
 export function markLabel(input: string) {
+  const mouse = /^MOUSE_(?:BTN)?(\w+)$/.exec(input)
+  if (mouse) return MOUSE_BUTTONS[mouse[1]] ?? mouse[1]
   const button = /^JOY_BTN(\d+)$/.exec(input)
   if (button) return button[1]
   const pov = /^JOY_BTN_POV\d_(\w+)$/.exec(input)
