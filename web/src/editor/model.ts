@@ -85,6 +85,15 @@ export function alignedWith(marks: Pick<Mark, 'input' | 'x' | 'y'>[], point: { x
   return { x: nearest('x'), y: nearest('y') }
 }
 
+export function gridLines(area: Required<Crop>, step: number) {
+  const along = (from: number, size: number) => {
+    const lines: number[] = []
+    for (let at = Math.floor(from / step + 1) * step; at < from + size; at += step) lines.push(at)
+    return lines
+  }
+  return { x: along(area.x, area.w), y: along(area.y, area.h) }
+}
+
 export const nextOpen = (order: string[], placed: Set<string>) => order.find((input) => !placed.has(input)) ?? null
 
 export const cropOf = (frame: Frame | null): Required<Crop> | null =>

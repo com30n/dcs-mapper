@@ -421,5 +421,14 @@
   "editor.changesMany": "{count} unsaved changes on {devices} devices — the download takes them all",
   "editor.snap": "Snap",
   "editor.snapHint": "Numbers snap onto the lines through other numbers. Hold Alt to drag without snapping.",
-  "editor.removeCopy": "Take this {input} off the picture"
+  "editor.removeCopy": "Take this {input} off the picture",
+  "menu.find": "Find it in the table",
+  "menu.assignHere": "Assign {input} to “{command}”",
+  "menu.again": "Assign again",
+  "menu.zoomIn": "Zoom in",
+  "menu.zoomOut": "Zoom out",
+  "menu.putHere": "Put {input} here",
+  "editor.grid": "Grid",
+  "editor.gridHint": "Lines every 5% of the picture to line numbers up by eye.",
+  "export.enlarge": "Click to see it bigger"
 }

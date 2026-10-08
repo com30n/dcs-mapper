@@ -1,4 +1,5 @@
-import { Fragment, useEffect, useState, type ReactNode } from 'react'
+import * as Dialog from '@radix-ui/react-dialog'
+import { Fragment, useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { usePrepared } from '../../state/prepare'
 import { useNavigate } from 'react-router'
 import { comboText } from '../../dcs/combos'
@@ -14,6 +15,7 @@ import { Button } from '../../ui/Button'
 import { cx } from '../../ui/cx'
 import { Notice } from '../../ui/Notice'
 import { Page } from '../../ui/Page'
+import { ZoomBox } from '../../ui/ZoomBox'
 import styles from './Export.module.css'
 import { drawSheet, hasSheet, sheetName } from './layoutSheet'
 
@@ -113,9 +115,33 @@ function EntryRows({ s, entry, texts }: { s: SessionState; entry: Entry; texts: 
   )
 }
 
+function SheetZoom({ url, name, ratio, onClose }: { url: string; name: string; ratio: number; onClose: () => void }) {
+  const { t } = useWords()
+  return (
+    <Dialog.Root open onOpenChange={(open) => { if (!open) onClose() }}>
+      <Dialog.Portal>
+        <Dialog.Overlay className={styles.zoomBack}>
+          <Dialog.Content className={styles.zoomCard} aria-describedby={undefined}>
+            <div className={styles.zoomHead}>
+              <Dialog.Title className={styles.zoomTitle}>{name}</Dialog.Title>
+              <span className="muted small">{t('zoom.hint')}</span>
+              <Dialog.Close asChild><Button variant="icon" aria-label={t('map.close')}>×</Button></Dialog.Close>
+            </div>
+            <div className={styles.zoomPicture} style={{ '--ratio': ratio } as CSSProperties}>
+              <ZoomBox><img className={styles.zoomImage} src={url} alt={name} draggable={false} /></ZoomBox>
+            </div>
+          </Dialog.Content>
+        </Dialog.Overlay>
+      </Dialog.Portal>
+    </Dialog.Root>
+  )
+}
+
 function SheetPreview({ s, entry }: { s: SessionState; entry: Entry }) {
-  const { lang } = useWords()
+  const { t, lang } = useWords()
   const [url, setUrl] = useState<string | null>(null)
+  const [ratio, setRatio] = useState(0)
+  const [big, setBig] = useState(false)
   useEffect(() => {
     let made: string | null = null
     let alive = true
@@ -129,7 +155,15 @@ function SheetPreview({ s, entry }: { s: SessionState; entry: Entry }) {
       if (made) URL.revokeObjectURL(made)
     }
   }, [s, entry, lang])
-  return url ? <img className={styles.sheet} src={url} alt="" /> : <div className={styles.sheet} />
+  if (!url) return <div className={cx(styles.sheet, styles.sheetWait)} />
+  return (
+    <>
+      <button type="button" className={styles.sheetButton} title={t('export.enlarge')} aria-label={t('export.enlarge')} onClick={() => setBig(true)}>
+        <img className={styles.sheet} src={url} alt="" onLoad={(e) => setRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)} />
+      </button>
+      {big && ratio > 0 && <SheetZoom url={url} name={sheetName(s, entry)} ratio={ratio} onClose={() => setBig(false)} />}
+    </>
+  )
 }
 
 function SheetRow({ s, entry, first }: { s: SessionState; entry: Entry; first: boolean }) {

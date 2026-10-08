@@ -24,6 +24,7 @@ export interface EditorState {
   selected: string | null
   selectedLayer: number | null
   snap: boolean
+  grid: boolean
   reported: string[]
   padName: string | null
   message: string
@@ -38,19 +39,32 @@ export interface Kept {
 }
 
 const SNAP = 'hotas-mapper-editor-snap'
+const GRID = 'hotas-mapper-editor-grid'
 
 export const useEditor = create<EditorState>()(() => ({
   library: [], original: null, device: null, maker: '', files: {}, mode: 'buttons', picture: null, whole: null, view: 0,
-  selected: null, selectedLayer: null, snap: readSnap(), reported: [], padName: null, message: '', kept: {},
+  selected: null, selectedLayer: null, snap: readOption(SNAP, true), grid: readOption(GRID, false), reported: [], padName: null, message: '', kept: {},
 }))
 
-function readSnap() {
-  try { return localStorage.getItem(SNAP) !== 'off' } catch { return true }
+function readOption(key: string, fallback: boolean) {
+  try {
+    const value = localStorage.getItem(key)
+    return value === null ? fallback : value === 'on'
+  } catch { return fallback }
+}
+
+function keepOption(key: string, on: boolean) {
+  try { localStorage.setItem(key, on ? 'on' : 'off') } catch { return }
 }
 
 export function setSnap(snap: boolean) {
-  try { localStorage.setItem(SNAP, snap ? 'on' : 'off') } catch { return set({ snap }) }
+  keepOption(SNAP, snap)
   set({ snap })
+}
+
+export function setGrid(grid: boolean) {
+  keepOption(GRID, grid)
+  set({ grid })
 }
 
 const get = () => useEditor.getState()

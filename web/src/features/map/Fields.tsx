@@ -4,7 +4,7 @@ import { comboId, comboText } from '../../dcs/combos'
 import type { Profile } from '../../dcs/types'
 import type { Device } from '../../data/types'
 import { useWords } from '../../i18n/i18n'
-import { carry, listen, pickColumn, removeCombo, why } from '../../state/bindings'
+import { carry, listen, pickColumn, removeCombo, showPicture, why } from '../../state/bindings'
 import { hoverKeys, unhover, useMapUi } from '../../state/mapUi'
 import { comboIssue, comboKeys, issueText } from '../../state/problems'
 import type { SessionState } from '../../state/session'
@@ -12,6 +12,7 @@ import type { Entry } from '../../state/types'
 import { cx } from '../../ui/cx'
 import { IconButton } from '../../ui/IconButton'
 import { ClearIcon, CopyIcon, MoveIcon, TuneIcon } from '../../ui/icons'
+import { offer, type MenuItem } from '../../ui/offer'
 import { commandOf, groupRows, isMapped, tableItems, type Item } from './tree'
 import styles from './Fields.module.css'
 import { openTune } from './dialogs/open'
@@ -57,14 +58,16 @@ function Cell({ s, column, item, section }: { s: SessionState; column: Column; i
   }
   const name = tr(command.name)
   const pick = () => listen(hash, kind, name, entry.uid)
+  const picture: MenuItem[] = ['line', { label: t('map.showPicture', { name: device.name }), run: () => showPicture(entry.uid) }]
   if (listening || !combos.length) {
     const bound = combos.map(comboText).join(', ')
     const waiting = addAxis && bound ? `${bound}, …` : t(device.role === 'mouse' ? 'map.pickMouseShort' : device.role === 'keyboard' ? 'map.pressKeyShort' : kind === 'axis' ? 'map.moveAxisShort' : 'map.pressShort')
+    const assign = t(kind === 'axis' ? 'map.assignAxis' : device.role === 'keyboard' ? 'map.assignKey' : 'map.assignButton')
     return (
-      <div ref={ref} className={styles.cell} role="cell">
+      <div ref={ref} className={styles.cell} role="cell" onContextMenu={offer(() => [...(listening ? [] : [{ label: assign, run: pick }]), ...picture].filter((item, i) => i > 0 || item !== 'line'))}>
         <div className={styles.slotRow}>
           <button type="button" className={cx(styles.field, listening ? styles.listen : styles.empty)} title={`${name} · ${device.name}`} onClick={pick}>
-            {listening ? waiting : t(kind === 'axis' ? 'map.assignAxis' : device.role === 'keyboard' ? 'map.assignKey' : 'map.assignButton')}
+            {listening ? waiting : assign}
           </button>
         </div>
       </div>
@@ -76,9 +79,19 @@ function Cell({ s, column, item, section }: { s: SessionState; column: Column; i
         const issue = comboIssue(s, entry, combo, hash)
         const state = issue ? 'warn' : flash ? 'flash' : combo.key === focus ? 'focus' : null
         const about = `${name} · ${comboText(combo)} · ${device.name}`
+        const menu = (): MenuItem[] => [
+          { label: t('menu.again'), run: pick },
+          ...(kind === 'axis' ? [{ label: t('tune.button'), run: () => { pickColumn(entry.uid); openTune(entry, hash, i) } }] : []),
+          { label: t('map.copy'), run: () => carry(kind, hash, name, combo, 'copy', entry.uid) },
+          { label: t('map.move'), run: () => carry(kind, hash, name, combo, 'move', entry.uid) },
+          ...(issue ? [{ label: t('map.why'), run: () => { pickColumn(entry.uid); why(combo.key) } }] : []),
+          'line',
+          { label: t('map.clearOne'), run: () => removeCombo(kind, hash, comboId(combo), name, entry.uid), tone: 'warn' },
+          ...picture,
+        ]
         return (
           <Fragment key={comboId(combo)}>
-            <div className={styles.slotRow} onMouseEnter={() => hoverKeys(entry.uid, comboKeys(s, entry, combo))} onMouseLeave={() => unhover(entry.uid)}
+            <div className={styles.slotRow} onContextMenu={offer(menu)} onMouseEnter={() => hoverKeys(entry.uid, comboKeys(s, entry, combo))} onMouseLeave={() => unhover(entry.uid)}
               onFocus={() => hoverKeys(entry.uid, comboKeys(s, entry, combo))} onBlur={() => unhover(entry.uid)}>
               <button type="button" className={cx(styles.field, state && styles[state])} title={`${name} · ${device.name}`} onClick={pick}>{comboText(combo)}</button>
               {kind === 'axis' && (

@@ -421,5 +421,14 @@
   "editor.changesMany": "Несохранённых изменений: {count}, устройств: {devices} — скачивание заберёт все",
   "editor.snap": "Прилипание",
   "editor.snapHint": "Номера прилипают к линиям через другие номера. С зажатым Alt тащатся без прилипания.",
-  "editor.removeCopy": "Убрать этот {input} с картинки"
+  "editor.removeCopy": "Убрать этот {input} с картинки",
+  "menu.find": "Найти в таблице",
+  "menu.assignHere": "Назначить {input} на «{command}»",
+  "menu.again": "Назначить заново",
+  "menu.zoomIn": "Приблизить",
+  "menu.zoomOut": "Отдалить",
+  "menu.putHere": "Поставить {input} сюда",
+  "editor.grid": "Сетка",
+  "editor.gridHint": "Линии через каждые 5% картинки, чтобы выравнивать номера на глаз.",
+  "export.enlarge": "Нажми, чтобы посмотреть крупнее"
 }

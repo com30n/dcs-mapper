@@ -16,4 +16,14 @@
 .lineDel { background: var(--danger-soft); color: var(--danger); }
 .sign { flex: none; width: 14px; user-select: none; }
 .code { white-space: pre; tab-size: 4; }
-.sheet { display: block; margin-top: 8px; width: 702px; max-width: 100%; aspect-ratio: 1754 / 1240; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
+.sheet { display: block; margin-top: 8px; width: 702px; max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
+.sheetWait { aspect-ratio: 1754 / 1240; }
+.sheetButton { display: block; max-width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
+.sheetButton:hover .sheet { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); }
+.zoomBack { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(20, 24, 30, 0.7); }
+.zoomCard { display: flex; flex-direction: column; gap: 10px; max-width: 100%; max-height: 100%; padding: 12px 16px 16px; background: var(--surface); border-radius: 14px; box-shadow: 0 24px 64px rgba(20, 24, 30, 0.35); outline: none; }
+.zoomHead { display: flex; align-items: center; gap: 16px; }
+.zoomHead > span { flex: 1; }
+.zoomTitle { margin: 0; font-size: 17px; }
+.zoomPicture { width: min(calc(100vw - 64px), calc((100vh - 120px) * var(--ratio))); }
+.zoomImage { display: block; width: 100%; height: auto; }

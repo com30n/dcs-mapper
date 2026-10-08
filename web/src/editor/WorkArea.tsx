@@ -7,10 +7,12 @@ import { useWords } from '../i18n/i18n'
 import { Button } from '../ui/Button'
 import { cx } from '../ui/cx'
 import { DevicePicture } from '../ui/DevicePicture'
+import { offer, type MenuItem } from '../ui/offer'
+import { RightMenu } from '../ui/RightMenu'
 import { PictureInput } from './About'
 import styles from './Editor.module.css'
-import { alignedWith, changeCount, cropOf, fitCrop, markExtent, marksOf, viewMarks } from './model'
-import { addPictureFile, allInputs, frameOf, setSnap, moveInView, moveMark, place, placeInView, placedInputs, resetMarks, select, setCrop, setMode, takeOff, useEditor, type Mode } from './store'
+import { alignedWith, changeCount, cropOf, fitCrop, gridLines, markExtent, marksOf, viewMarks } from './model'
+import { addPictureFile, allInputs, frameOf, setGrid, setSnap, moveInView, moveMark, place, placeInView, placedInputs, resetMarks, select, setCrop, setMode, takeOff, useEditor, type Mode } from './store'
 
 const MODES: Mode[] = ['buttons', 'card', 'views']
 const FULL: Required<Crop> = { x: 0, y: 0, w: 100, h: 100 }
@@ -40,6 +42,9 @@ function Bar() {
       <span className="row">
         <label className={styles.snap} title={t('editor.snapHint')}>
           <input type="checkbox" checked={s.snap} onChange={(e) => setSnap(e.target.checked)} />{t('editor.snap')}
+        </label>
+        <label className={styles.snap} title={t('editor.gridHint')}>
+          <input type="checkbox" checked={s.grid} onChange={(e) => setGrid(e.target.checked)} />{t('editor.grid')}
         </label>
         {here && <Button variant="ghost" small onClick={() => takeOff(selected)}>{t(copies > 1 ? 'editor.removeCopy' : 'editor.remove', { input: inputLabel(selected) })}</Button>}
         {moved && <Button variant="ghost" small onClick={resetMarks}>{t('editor.reset')}</Button>}
@@ -108,28 +113,33 @@ function Canvas({ picture }: { picture: string }) {
     place(p.x, p.y)
   }
   return (
-    <div ref={box} className={cx(styles.canvas, s.mode === 'buttons' && styles.placing)} style={{ aspectRatio: `${width * area.w} / ${height * area.h}`, width: `min(100%, calc((100vh - 440px) * ${width * area.w / (height * area.h)}))` }}
-      onPointerMove={onMove} onPointerLeave={() => setPointer(null)} onPointerUp={() => { drag.current = null; setHeld(null) }} onPointerCancel={() => { drag.current = null; setHeld(null) }} onClick={onClick}>
-      <img src={pictureUrl(device, picture)} alt="" draggable={false}
-        style={{ ...at(0, 0), width: `${10000 / area.w}%`, height: `${10000 / area.h}%` }} />
-      {s.mode === 'buttons' && s.original && (
-        <Ghosts area={area} moved={movedFrom(marksOf(s.original, picture).map((m) => ({ ...m, key: m.input })), marksOf(device, picture).map((m) => ({ ...m, key: m.input })))} />
-      )}
-      {s.mode === 'buttons' && <Guides pointer={pointer} area={area} />}
-      {s.mode === 'buttons' && marksOf(device, picture).map((m) => (
-        <button key={m.input} type="button" className={cx(styles.mark, isAxisKey(m.input) && styles.axisMark, s.selected === m.input && styles.selected)}
-          style={at(m.x, m.y)} title={inputLabel(m.input)} aria-label={inputLabel(m.input)} aria-pressed={s.selected === m.input}
-          onPointerDown={(e) => { select(m.input); grab(e, { mark: m.input }) }}>
-          {markLabel(m.input)}
-        </button>
-      ))}
-      {crop && <FrameBox crop={crop} label={s.mode === 'card' ? t('editor.mode.card') : device.views[s.view]?.name ?? ''}
-        onGrab={(e) => { const p = point(e); grab(e, { dx: p.x - crop.x, dy: p.y - crop.y }) }} onGrabCorner={(e) => grab(e, 'corner')} />}
-    </div>
+    <RightMenu rest={(e) => s.mode === 'buttons' ? canvasMenu(t, () => { const p = point(e); place(p.x, p.y) }) : []}>
+      <div ref={box} className={cx(styles.canvas, s.mode === 'buttons' && styles.placing)} style={{ aspectRatio: `${width * area.w} / ${height * area.h}`, width: `min(100%, calc((100vh - 440px) * ${width * area.w / (height * area.h)}))` }}
+        onPointerMove={onMove} onPointerLeave={() => setPointer(null)} onPointerUp={() => { drag.current = null; setHeld(null) }} onPointerCancel={() => { drag.current = null; setHeld(null) }} onClick={onClick}>
+        <img src={pictureUrl(device, picture)} alt="" draggable={false}
+          style={{ ...at(0, 0), width: `${10000 / area.w}%`, height: `${10000 / area.h}%` }} />
+        {s.grid && <Grid area={area} />}
+        {s.mode === 'buttons' && s.original && (
+          <Ghosts area={area} moved={movedFrom(marksOf(s.original, picture).map((m) => ({ ...m, key: m.input })), marksOf(device, picture).map((m) => ({ ...m, key: m.input })))} />
+        )}
+        {s.mode === 'buttons' && <Guides pointer={pointer} area={area} />}
+        {s.mode === 'buttons' && marksOf(device, picture).map((m) => (
+          <button key={m.input} type="button" className={cx(styles.mark, isAxisKey(m.input) && styles.axisMark, s.selected === m.input && styles.selected)}
+            style={at(m.x, m.y)} title={inputLabel(m.input)} aria-label={inputLabel(m.input)} aria-pressed={s.selected === m.input}
+            onPointerDown={(e) => { if (e.button !== 0) return; select(m.input); grab(e, { mark: m.input }) }}
+            onContextMenu={offer(() => markMenu(t, m.input, 1, () => { select(m.input); takeOff(m.input) }))}>
+            {markLabel(m.input)}
+          </button>
+        ))}
+        {crop && <FrameBox crop={crop} label={s.mode === 'card' ? t('editor.mode.card') : device.views[s.view]?.name ?? ''}
+          onGrab={(e) => { const p = point(e); grab(e, { dx: p.x - crop.x, dy: p.y - crop.y }) }} onGrabCorner={(e) => grab(e, 'corner')} />}
+      </div>
+    </RightMenu>
   )
 }
 
 function ViewCanvas({ view }: { view: Frame }) {
+  const { t } = useWords()
   const s = useEditor()
   const device = s.device!
   const box = useRef<HTMLDivElement>(null)
@@ -146,38 +156,74 @@ function ViewCanvas({ view }: { view: Frame }) {
   }
   const at = (x: number, y: number) => ({ left: `${(x - area.x) / area.w * 100}%`, top: `${(y - area.y) / area.h * 100}%` })
   const stop = () => { drag.current = null; setHeld(null) }
+  const copies = (input: string) => marks.filter((m) => m.input === input).length
   return (
-    <div ref={box} className={cx(styles.canvas, styles.placing)} style={{ aspectRatio: `${width * area.w} / ${height * area.h}`, width: `min(100%, calc((100vh - 440px) * ${width * area.w / (height * area.h)}))` }}
-      onPointerMove={(e) => {
-        const d = drag.current
-        const here = pointerAt(marks, point(e), d?.input, s.snap && !e.altKey)
-        setPointer(here)
-        if (d) moveInView(d.layer, d.input, here.x, here.y)
-      }}
-      onPointerLeave={() => setPointer(null)} onPointerUp={stop} onPointerCancel={stop}
-      onClick={(e) => { if (startedOnItem.current) { startedOnItem.current = false; return } const p = point(e); placeInView(p.x, p.y) }}>
-      <div className={styles.whole} style={{ ...at(0, 0), width: `${10000 / area.w}%`, height: `${10000 / area.h}%` }}>
-        <DevicePicture device={device} frame={view} />
+    <RightMenu rest={(e) => canvasMenu(t, () => { const p = point(e); placeInView(p.x, p.y) })}>
+      <div ref={box} className={cx(styles.canvas, styles.placing)} style={{ aspectRatio: `${width * area.w} / ${height * area.h}`, width: `min(100%, calc((100vh - 440px) * ${width * area.w / (height * area.h)}))` }}
+        onPointerMove={(e) => {
+          const d = drag.current
+          const here = pointerAt(marks, point(e), d?.input, s.snap && !e.altKey)
+          setPointer(here)
+          if (d) moveInView(d.layer, d.input, here.x, here.y)
+        }}
+        onPointerLeave={() => setPointer(null)} onPointerUp={stop} onPointerCancel={stop}
+        onClick={(e) => { if (startedOnItem.current) { startedOnItem.current = false; return } const p = point(e); placeInView(p.x, p.y) }}>
+        <div className={styles.whole} style={{ ...at(0, 0), width: `${10000 / area.w}%`, height: `${10000 / area.h}%` }}>
+          <DevicePicture device={device} frame={view} />
+        </div>
+        {s.grid && <Grid area={area} />}
+        {s.original && (
+          <Ghosts area={area} moved={movedFrom(viewMarks(s.original, view).map((m) => ({ ...m, key: `${m.layer}:${m.input}` })), marks.map((m) => ({ ...m, key: `${m.layer}:${m.input}` })))} />
+        )}
+        <Guides pointer={pointer} area={area} />
+        {marks.map((m) => (
+          <button key={`${m.layer}:${m.input}`} type="button" className={cx(styles.mark, isAxisKey(m.input) && styles.axisMark, s.selected === m.input && (s.selectedLayer === null || s.selectedLayer === m.layer) && styles.selected)}
+            style={at(m.x, m.y)} title={`${inputLabel(m.input)} · ${m.picture}`} aria-label={inputLabel(m.input)} aria-pressed={s.selected === m.input}
+            onContextMenu={offer(() => markMenu(t, m.input, copies(m.input), () => { select(m.input, m.layer); takeOff(m.input) }))}
+            onPointerDown={(e) => {
+              e.stopPropagation()
+              if (e.button !== 0) return
+              select(m.input, m.layer)
+              drag.current = { layer: m.layer, input: m.input }
+              startedOnItem.current = true
+              setHeld(area)
+              box.current!.setPointerCapture(e.pointerId)
+            }}>
+            {markLabel(m.input)}
+          </button>
+        ))}
       </div>
-      {s.original && (
-        <Ghosts area={area} moved={movedFrom(viewMarks(s.original, view).map((m) => ({ ...m, key: `${m.layer}:${m.input}` })), marks.map((m) => ({ ...m, key: `${m.layer}:${m.input}` })))} />
-      )}
-      <Guides pointer={pointer} area={area} />
-      {marks.map((m) => (
-        <button key={`${m.layer}:${m.input}`} type="button" className={cx(styles.mark, isAxisKey(m.input) && styles.axisMark, s.selected === m.input && (s.selectedLayer === null || s.selectedLayer === m.layer) && styles.selected)}
-          style={at(m.x, m.y)} title={`${inputLabel(m.input)} · ${m.picture}`} aria-label={inputLabel(m.input)} aria-pressed={s.selected === m.input}
-          onPointerDown={(e) => {
-            e.stopPropagation()
-            select(m.input, m.layer)
-            drag.current = { layer: m.layer, input: m.input }
-            startedOnItem.current = true
-            setHeld(area)
-            box.current!.setPointerCapture(e.pointerId)
-          }}>
-          {markLabel(m.input)}
-        </button>
-      ))}
-    </div>
+    </RightMenu>
+  )
+}
+
+type Words = ReturnType<typeof useWords>['t']
+
+function markMenu(t: Words, input: string, copies: number, remove: () => void): MenuItem[] {
+  return [{ label: t(copies > 1 ? 'editor.removeCopy' : 'editor.remove', { input: inputLabel(input) }), run: remove, tone: 'warn' }]
+}
+
+function canvasMenu(t: Words, putHere: () => void): MenuItem[] {
+  const s = useEditor.getState()
+  const moved = !!s.original?.id && changeCount(s.original, s.device) > 0
+  return [
+    ...(s.selected ? [{ label: t('menu.putHere', { input: inputLabel(s.selected) }), run: putHere }] : []),
+    ...(moved ? [{ label: t('editor.reset'), run: resetMarks }] : []),
+    ...(s.selected || moved ? ['line' as const] : []),
+    { label: t('editor.snap'), on: s.snap, turn: setSnap },
+    { label: t('editor.grid'), on: s.grid, turn: setGrid },
+  ]
+}
+
+const GRID_STEP = 5
+
+function Grid({ area }: { area: Required<Crop> }) {
+  const lines = gridLines(area, GRID_STEP)
+  return (
+    <svg className={styles.grid} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      {lines.x.map((x) => <line key={`x${x}`} className={cx(x % (GRID_STEP * 2) === 0 && styles.gridMajor)} x1={(x - area.x) / area.w * 100} x2={(x - area.x) / area.w * 100} y1={0} y2={100} />)}
+      {lines.y.map((y) => <line key={`y${y}`} className={cx(y % (GRID_STEP * 2) === 0 && styles.gridMajor)} y1={(y - area.y) / area.h * 100} y2={(y - area.y) / area.h * 100} x1={0} x2={100} />)}
+    </svg>
   )
 }
 

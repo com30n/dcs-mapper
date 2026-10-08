@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import type { PadFrame } from '../gamepad/pads'
 import { emptyDevice } from './model'
-import { editedDevices, moveInView, moveMark, openDevice, padFrame, placeInView, takeOff, useEditor } from './store'
+import { editedDevices, moveInView, moveMark, openDevice, padFrame, placeInView, setGrid, takeOff, useEditor } from './store'
 import type { Device } from '../data/types'
 
 function frame(index: number, axes: number[], fresh: string[] = []): PadFrame {
@@ -71,5 +71,19 @@ describe('editing several devices in one go', () => {
     await openDevice('MOZA/AB9 + MH16')
     const mark = useEditor.getState().device!.pictures['mh16.png'].marks!.find((m) => m.input === 'JOY_BTN1')
     expect(mark).toEqual({ input: 'JOY_BTN1', x: 1, y: 2 })
+  })
+})
+
+describe('grid over the picture in the editor', () => {
+  it('stays off until it is turned on and remembers the choice', () => {
+    const kept = new Map<string, string>()
+    vi.stubGlobal('localStorage', { getItem: (key: string) => kept.get(key) ?? null, setItem: (key: string, value: string) => kept.set(key, value) })
+    expect(useEditor.getState().grid).toBe(false)
+    setGrid(true)
+    expect(useEditor.getState().grid).toBe(true)
+    expect(localStorage.getItem('hotas-mapper-editor-grid')).toBe('on')
+    setGrid(false)
+    expect(localStorage.getItem('hotas-mapper-editor-grid')).toBe('off')
+    vi.unstubAllGlobals()
   })
 })
