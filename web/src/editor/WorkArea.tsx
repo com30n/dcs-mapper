@@ -10,7 +10,7 @@ import { DevicePicture } from '../ui/DevicePicture'
 import { PictureInput } from './About'
 import styles from './Editor.module.css'
 import { alignedWith, changeCount, cropOf, fitCrop, markExtent, marksOf, viewMarks } from './model'
-import { addPictureFile, allInputs, frameOf, moveInView, moveMark, place, placeInView, placedInputs, resetMarks, select, setCrop, setMode, takeOff, useEditor, type Mode } from './store'
+import { addPictureFile, allInputs, frameOf, setSnap, moveInView, moveMark, place, placeInView, placedInputs, resetMarks, select, setCrop, setMode, takeOff, useEditor, type Mode } from './store'
 
 const MODES: Mode[] = ['buttons', 'card', 'views']
 const FULL: Required<Crop> = { x: 0, y: 0, w: 100, h: 100 }
@@ -27,6 +27,7 @@ function Bar() {
   const selected = s.selected
   const view = s.whole !== null ? s.device!.views[s.whole] : null
   const here = !!selected && (view ? viewMarks(s.device!, view).some((m) => m.input === selected) : !!s.picture && marksOf(s.device!, s.picture).some((m) => m.input === selected))
+  const copies = view && selected ? viewMarks(s.device!, view).filter((m) => m.input === selected).length : 1
   const all = allInputs(s)
   const placed = placedInputs(s)
   const text = !s.picture && !view ? t('editor.bar.first')
@@ -37,7 +38,10 @@ function Bar() {
     <div className={styles.bar} role="status">
       <span>{text}</span>
       <span className="row">
-        {here && <Button variant="ghost" small onClick={() => takeOff(selected)}>{t('editor.remove', { input: inputLabel(selected) })}</Button>}
+        <label className={styles.snap} title={t('editor.snapHint')}>
+          <input type="checkbox" checked={s.snap} onChange={(e) => setSnap(e.target.checked)} />{t('editor.snap')}
+        </label>
+        {here && <Button variant="ghost" small onClick={() => takeOff(selected)}>{t(copies > 1 ? 'editor.removeCopy' : 'editor.remove', { input: inputLabel(selected) })}</Button>}
         {moved && <Button variant="ghost" small onClick={resetMarks}>{t('editor.reset')}</Button>}
       </span>
     </div>
@@ -90,7 +94,7 @@ function Canvas({ picture }: { picture: string }) {
   const onMove = (e: PointerEvent) => {
     const what = drag.current
     const p = point(e)
-    const here = s.mode === 'buttons' ? pointerAt(marksOf(device, picture), p, what && what !== 'corner' && 'mark' in what ? what.mark : undefined) : null
+    const here = s.mode === 'buttons' ? pointerAt(marksOf(device, picture), p, what && what !== 'corner' && 'mark' in what ? what.mark : undefined, s.snap && !e.altKey) : null
     setPointer(here)
     if (!what) return
     if (what === 'corner') { if (crop) setCrop(fitCrop({ ...crop, w: p.x - crop.x, h: p.y - crop.y })) }
@@ -146,7 +150,7 @@ function ViewCanvas({ view }: { view: Frame }) {
     <div ref={box} className={cx(styles.canvas, styles.placing)} style={{ aspectRatio: `${width * area.w} / ${height * area.h}`, width: `min(100%, calc((100vh - 440px) * ${width * area.w / (height * area.h)}))` }}
       onPointerMove={(e) => {
         const d = drag.current
-        const here = pointerAt(marks, point(e), d?.input)
+        const here = pointerAt(marks, point(e), d?.input, s.snap && !e.altKey)
         setPointer(here)
         if (d) moveInView(d.layer, d.input, here.x, here.y)
       }}
@@ -160,11 +164,11 @@ function ViewCanvas({ view }: { view: Frame }) {
       )}
       <Guides pointer={pointer} area={area} />
       {marks.map((m) => (
-        <button key={`${m.layer}:${m.input}`} type="button" className={cx(styles.mark, isAxisKey(m.input) && styles.axisMark, s.selected === m.input && styles.selected)}
+        <button key={`${m.layer}:${m.input}`} type="button" className={cx(styles.mark, isAxisKey(m.input) && styles.axisMark, s.selected === m.input && (s.selectedLayer === null || s.selectedLayer === m.layer) && styles.selected)}
           style={at(m.x, m.y)} title={`${inputLabel(m.input)} · ${m.picture}`} aria-label={inputLabel(m.input)} aria-pressed={s.selected === m.input}
           onPointerDown={(e) => {
             e.stopPropagation()
-            select(m.input)
+            select(m.input, m.layer)
             drag.current = { layer: m.layer, input: m.input }
             startedOnItem.current = true
             setHeld(area)
@@ -183,8 +187,8 @@ interface Pointer {
   aligned: { x: number | null; y: number | null }
 }
 
-function pointerAt(marks: Pick<Mark, 'input' | 'x' | 'y'>[], p: { x: number; y: number }, skip?: string): Pointer {
-  const aligned = alignedWith(marks, p, skip)
+function pointerAt(marks: Pick<Mark, 'input' | 'x' | 'y'>[], p: { x: number; y: number }, skip?: string, snap = true): Pointer {
+  const aligned = snap ? alignedWith(marks, p, skip) : { x: null, y: null }
   return { x: aligned.x ?? p.x, y: aligned.y ?? p.y, aligned }
 }
 

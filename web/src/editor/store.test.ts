@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import type { PadFrame } from '../gamepad/pads'
 import { emptyDevice } from './model'
-import { editedDevices, moveInView, moveMark, openDevice, padFrame, placeInView, useEditor } from './store'
+import { editedDevices, moveInView, moveMark, openDevice, padFrame, placeInView, takeOff, useEditor } from './store'
 import type { Device } from '../data/types'
 
 function frame(index: number, axes: number[], fresh: string[] = []): PadFrame {
@@ -41,6 +41,14 @@ describe('placing numbers on the view the mapper shows', () => {
     useEditor.setState({ device: layered(), mode: 'buttons', view: 0, whole: 0, selected: null })
     moveInView(1, 'JOY_BTN2', 75, 25)
     expect(marks()['grip.png']).toEqual([{ input: 'JOY_BTN2', x: 50, y: 50 }])
+  })
+
+  it('takes off only the copy that was picked when a number is on two pictures', () => {
+    const twice = layered()
+    twice.pictures['panel.png'].marks = [{ input: 'JOY_BTN2', x: 10, y: 10 }]
+    useEditor.setState({ device: twice, mode: 'buttons', view: 0, whole: 0, selected: 'JOY_BTN2', selectedLayer: 0 })
+    takeOff('JOY_BTN2')
+    expect(marks()).toEqual({ 'panel.png': [], 'grip.png': [{ input: 'JOY_BTN2', x: 120, y: -20 }] })
   })
 
   it('puts a number on the picture under the pointer and takes it off the other one', () => {
