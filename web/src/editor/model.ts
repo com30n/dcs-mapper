@@ -1,4 +1,5 @@
 import { AXES, POV } from '../dcs/combos'
+import { frameLayout } from '../data/frame'
 import type { Crop, Device, Frame, Mark, View } from '../data/types'
 
 export const ALL_INPUTS = [
@@ -40,6 +41,39 @@ export function removeMark(device: Device, picture: string, input: string): Devi
   return { ...device, pictures: { ...device.pictures, [picture]: { ...device.pictures[picture], marks: marksOf(device, picture).filter((m) => m.input !== input) } } }
 }
 
+const MARGIN = 4
+const two = (v: number) => Math.round(v * 100) / 100
+
+export function markExtent(marks: Mark[]): Required<Crop> {
+  const x = Math.min(0, ...marks.map((m) => m.x - MARGIN))
+  const y = Math.min(0, ...marks.map((m) => m.y - MARGIN))
+  const right = Math.max(100, ...marks.map((m) => m.x + MARGIN))
+  const bottom = Math.max(100, ...marks.map((m) => m.y + MARGIN))
+  return { x: two(x), y: two(y), w: two(right - x), h: two(bottom - y) }
+}
+
+const rounded = (v: number) => Math.round(v * 100) / 100
+
+export function viewMarks(device: Device, frame: Frame) {
+  return frameLayout(device, frame).placed.flatMap((p, layer) => marksOf(device, p.picture).map((m) => ({
+    layer, picture: p.picture, input: m.input, x: rounded(p.ax + (m.x - p.c.x) / p.c.w * p.aw), y: rounded(p.ay + (m.y - p.c.y) / p.c.h * p.ah),
+  })))
+}
+
+export function toPicture(device: Device, frame: Frame, layer: number, x: number, y: number) {
+  const p = frameLayout(device, frame).placed[layer]
+  return { x: rounded(p.c.x + (x - p.ax) / p.aw * p.c.w), y: rounded(p.c.y + (y - p.ay) / p.ah * p.c.h) }
+}
+
+export function layerAt(device: Device, frame: Frame, x: number, y: number) {
+  const placed = frameLayout(device, frame).placed
+  for (let i = placed.length - 1; i >= 0; i--) {
+    const p = placed[i]
+    if (x >= p.ax && x <= p.ax + p.aw && y >= p.ay && y <= p.ay + p.ah) return i
+  }
+  return null
+}
+
 export const nextOpen = (order: string[], placed: Set<string>) => order.find((input) => !placed.has(input)) ?? null
 
 export const cropOf = (frame: Frame | null): Required<Crop> | null =>
@@ -66,6 +100,8 @@ export function deviceId(maker: string, name: string) {
   return `${vendor}/${folderName(name.replace(prefix, '')) || 'Device'}`
 }
 
+const WRITTEN = new Set(['id', 'generic', 'name', 'role', 'dcsName', 'axes', 'preset', 'pictures', 'card', 'views'])
+
 export function deviceJson(device: Device): string {
   const pictures = Object.fromEntries(Object.entries(device.pictures).map(([name, p]) => {
     const marks = sortMarks(p.marks ?? [])
@@ -77,6 +113,7 @@ export function deviceJson(device: Device): string {
     ...(device.axes?.length ? { axes: device.axes } : {}),
     ...(device.preset !== undefined ? { preset: device.preset } : {}),
     pictures, card: device.card, views,
+    ...Object.fromEntries(Object.entries(device).filter(([key]) => !WRITTEN.has(key))),
   }
   return `${JSON.stringify(out, null, 1)}\n`
 }

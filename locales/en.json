@@ -412,5 +412,7 @@
   "map.pictureHint.keyboard": "Every key of a full-size keyboard: the browser cannot tell which keys yours has. Hover a key to see its commands.",
   "map.pictureHint.mouse": "A five-button mouse: the browser cannot tell which buttons yours has. The left button stays for clicking in the cockpit.",
   "map.pointedAt": "under the pointer",
-  "map.showColumn": "Show the {name} in the table"
+  "map.showColumn": "Show the {name} in the table",
+  "editor.wholeView": "{name} — as in the mapper",
+  "editor.wholeHint": "{count} pictures put together; numbers move on any of them"
 }

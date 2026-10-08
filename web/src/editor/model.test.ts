@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Device } from '../data/types'
-import { addPicture, changeCount, dcsNameOf, deviceId, deviceJson, emptyDevice, fitCrop, nextOpen, padInputs, placeMark, removeMark, sortInputs, withCrop } from './model'
+import { addPicture, changeCount, dcsNameOf, deviceId, deviceJson, emptyDevice, fitCrop, layerAt, markExtent, nextOpen, toPicture, viewMarks, padInputs, placeMark, removeMark, sortInputs, withCrop } from './model'
 
 const device = (): Device => ({
   id: 'MOZA/AB9 + MH16', name: 'MOZA AB9 FFB Base + MH16 grip', role: 'stick', dcsName: 'MOZA AB9 FFB Base',
@@ -52,6 +52,11 @@ describe('device editor model', () => {
     expect(deviceJson(d).startsWith('{\n "name"')).toBe(true)
   })
 
+  it('keeps the fields of device.json the editor does not know', () => {
+    const d = { ...device(), unverified: ['axes'] }
+    expect(JSON.parse(deviceJson(d)).unverified).toEqual(['axes'])
+  })
+
   it('gives a new device its first picture as card and view', () => {
     const d = addPicture(emptyDevice(), 'grip.png', [800, 600], 'blob:y')
     expect([d.card, d.views]).toEqual([{ picture: 'grip.png' }, [{ name: 'Main', picture: 'grip.png' }]])
@@ -61,5 +66,30 @@ describe('device editor model', () => {
     const before = device()
     const after = withCrop(placeMark(removeMark(before, 'mh16.png', 'JOY_BTN2'), 'mh16.png', 'JOY_BTN1', 1, 1).card!, { x: 0, y: 0, w: 40, h: 40 })
     expect(changeCount(before, { ...placeMark(removeMark(before, 'mh16.png', 'JOY_BTN2'), 'mh16.png', 'JOY_BTN1', 1, 1), card: after })).toBe(3)
+  })
+})
+
+describe('numbers placed beside a picture', () => {
+  it('widens the canvas to the numbers outside the picture, with room around them', () => {
+    expect(markExtent([{ input: 'JOY_BTN1', x: 50, y: 50 }])).toEqual({ x: 0, y: 0, w: 100, h: 100 })
+    expect(markExtent([{ input: 'JOY_BTN1', x: 119, y: -37.5 }, { input: 'JOY_X', x: -21.9, y: 40 }])).toEqual({ x: -25.9, y: -41.5, w: 148.9, h: 141.5 })
+  })
+})
+
+describe('numbers on a view put together from several pictures', () => {
+  const layered: Device = {
+    id: 'MOZA/MTQ', name: 'MTQ', role: 'throttle', dcsName: 'MOZA', card: null,
+    pictures: { 'panel.png': { size: [1000, 1000], marks: [{ input: 'JOY_BTN1', x: 50, y: 50 }] }, 'grip.png': { size: [1000, 500], marks: [{ input: 'JOY_BTN2', x: 120, y: -20 }] } },
+    views: [{ name: 'Main', size: [2000, 1000], layers: [{ picture: 'panel.png', at: [0, 0, 50] }, { picture: 'grip.png', at: [50, 0, 50] }] }],
+  }
+  const view = layered.views[0]
+
+  it('places every number where the mapper shows it, even beside its picture', () => {
+    expect(viewMarks(layered, view)).toEqual([{ layer: 0, picture: 'panel.png', input: 'JOY_BTN1', x: 25, y: 50 }, { layer: 1, picture: 'grip.png', input: 'JOY_BTN2', x: 110, y: -10 }])
+  })
+
+  it('turns a point of the view back into the picture it belongs to', () => {
+    expect(toPicture(layered, view, 1, 110, -10)).toEqual({ x: 120, y: -20 })
+    expect([layerAt(layered, view, 25, 50), layerAt(layered, view, 75, 20), layerAt(layered, view, 75, 80)]).toEqual([0, 1, null])
   })
 })

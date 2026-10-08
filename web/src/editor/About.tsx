@@ -4,7 +4,7 @@ import type { Role } from '../data/types'
 import { useWords } from '../i18n/i18n'
 import { cx } from '../ui/cx'
 import styles from './Editor.module.css'
-import { addPictureFile, setMaker, setMeta, showPicture, useEditor } from './store'
+import { addPictureFile, setMaker, setMeta, showPicture, showWhole, useEditor } from './store'
 
 const ROLES: Role[] = ['stick', 'throttle', 'pedals', 'panel', 'other']
 
@@ -47,8 +47,17 @@ export function About() {
       </div>
       <div className={styles.card}>
         <h2>{t('editor.pictures')}</h2>
+        {device.views.map((view, i) => view.layers && (
+          <button key={`view-${i}`} type="button" className={cx(styles.pictureItem, s.whole === i && styles.on)} aria-pressed={s.whole === i} onClick={() => showWhole(i)}>
+            <span className={styles.wholeIcon}>{view.layers.length}</span>
+            <span className="stack">
+              <strong>{t('editor.wholeView', { name: view.name })}</strong>
+              <span className="muted small">{t('editor.wholeHint', { count: view.layers.length })}</span>
+            </span>
+          </button>
+        ))}
         {Object.entries(device.pictures).map(([name, picture]) => (
-          <button key={name} type="button" className={cx(styles.pictureItem, s.picture === name && styles.on)} aria-pressed={s.picture === name} onClick={() => showPicture(name)}>
+          <button key={name} type="button" className={cx(styles.pictureItem, s.whole === null && s.picture === name && styles.on)} aria-pressed={s.whole === null && s.picture === name} onClick={() => showPicture(name)}>
             <img src={pictureUrl(device, name)} alt="" />
             <span className="stack">
               <strong>{name}</strong>

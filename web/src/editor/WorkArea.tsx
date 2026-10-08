@@ -1,17 +1,19 @@
 import { useRef, useState, type PointerEvent, type MouseEvent } from 'react'
 import { inputLabel, isAxisKey, markLabel } from '../dcs/combos'
 import { pictureUrl } from '../data/load'
-import type { Crop } from '../data/types'
+import { frameLayout } from '../data/frame'
+import type { Crop, Frame } from '../data/types'
 import { useWords } from '../i18n/i18n'
 import { Button } from '../ui/Button'
 import { cx } from '../ui/cx'
 import { DevicePicture } from '../ui/DevicePicture'
 import { PictureInput } from './About'
 import styles from './Editor.module.css'
-import { changeCount, cropOf, fitCrop, marksOf } from './model'
-import { addPictureFile, allInputs, frameOf, moveMark, place, placedInputs, resetMarks, select, setCrop, setMode, takeOff, useEditor, type Mode } from './store'
+import { changeCount, cropOf, fitCrop, markExtent, marksOf, viewMarks } from './model'
+import { addPictureFile, allInputs, frameOf, moveInView, moveMark, place, placeInView, placedInputs, resetMarks, select, setCrop, setMode, takeOff, useEditor, type Mode } from './store'
 
 const MODES: Mode[] = ['buttons', 'card', 'views']
+const FULL: Required<Crop> = { x: 0, y: 0, w: 100, h: 100 }
 
 type Drag = { mark: string } | { dx: number; dy: number } | 'corner'
 
@@ -23,10 +25,11 @@ function Bar() {
     return <div className={styles.barLight}>{frame?.layers ? t('editor.layers', { count: frame.layers.length }) : t('editor.frameHint')}</div>
   }
   const selected = s.selected
-  const here = !!selected && !!s.picture && marksOf(s.device!, s.picture).some((m) => m.input === selected)
+  const view = s.whole !== null ? s.device!.views[s.whole] : null
+  const here = !!selected && (view ? viewMarks(s.device!, view).some((m) => m.input === selected) : !!s.picture && marksOf(s.device!, s.picture).some((m) => m.input === selected))
   const all = allInputs(s)
   const placed = placedInputs(s)
-  const text = !s.picture ? t('editor.bar.first')
+  const text = !s.picture && !view ? t('editor.bar.first')
     : selected ? t(here ? 'editor.bar.move' : 'editor.bar.place', { input: inputLabel(selected) })
       : all.length && all.every((input) => placed.has(input)) ? t('editor.bar.done') : t('editor.bar.pick')
   const moved = !!s.original?.id && changeCount(s.original, s.device) > 0
@@ -66,14 +69,19 @@ function Canvas({ picture }: { picture: string }) {
   const box = useRef<HTMLDivElement>(null)
   const drag = useRef<Drag | null>(null)
   const startedOnItem = useRef(false)
+  const [held, setHeld] = useState<Required<Crop> | null>(null)
   const [width, height] = device.pictures[picture].size
   const crop = s.mode === 'buttons' ? null : cropOf(frameOf(s))
+  const fresh = s.mode === 'buttons' ? markExtent(marksOf(device, picture)) : FULL
+  const area = held ?? fresh
   const point = (e: PointerEvent | MouseEvent) => {
     const r = box.current!.getBoundingClientRect()
-    return { x: (e.clientX - r.left) / r.width * 100, y: (e.clientY - r.top) / r.height * 100 }
+    return { x: area.x + (e.clientX - r.left) / r.width * area.w, y: area.y + (e.clientY - r.top) / r.height * area.h }
   }
+  const at = (x: number, y: number) => ({ left: `${(x - area.x) / area.w * 100}%`, top: `${(y - area.y) / area.h * 100}%` })
   const grab = (e: PointerEvent, what: Drag) => {
     e.stopPropagation()
+    setHeld(area)
     drag.current = what
     startedOnItem.current = true
     box.current!.setPointerCapture(e.pointerId)
@@ -93,18 +101,61 @@ function Canvas({ picture }: { picture: string }) {
     place(p.x, p.y)
   }
   return (
-    <div ref={box} className={cx(styles.canvas, s.mode === 'buttons' && styles.placing)} style={{ aspectRatio: `${width} / ${height}`, width: `min(100%, calc((100vh - 440px) * ${width / height}))` }}
-      onPointerMove={onMove} onPointerUp={() => { drag.current = null }} onPointerCancel={() => { drag.current = null }} onClick={onClick}>
-      <img src={pictureUrl(device, picture)} alt="" draggable={false} />
+    <div ref={box} className={cx(styles.canvas, s.mode === 'buttons' && styles.placing)} style={{ aspectRatio: `${width * area.w} / ${height * area.h}`, width: `min(100%, calc((100vh - 440px) * ${width * area.w / (height * area.h)}))` }}
+      onPointerMove={onMove} onPointerUp={() => { drag.current = null; setHeld(null) }} onPointerCancel={() => { drag.current = null; setHeld(null) }} onClick={onClick}>
+      <img src={pictureUrl(device, picture)} alt="" draggable={false}
+        style={{ ...at(0, 0), width: `${10000 / area.w}%`, height: `${10000 / area.h}%` }} />
       {s.mode === 'buttons' && marksOf(device, picture).map((m) => (
         <button key={m.input} type="button" className={cx(styles.mark, isAxisKey(m.input) && styles.axisMark, s.selected === m.input && styles.selected)}
-          style={{ left: `${m.x}%`, top: `${m.y}%` }} title={inputLabel(m.input)} aria-label={inputLabel(m.input)} aria-pressed={s.selected === m.input}
+          style={at(m.x, m.y)} title={inputLabel(m.input)} aria-label={inputLabel(m.input)} aria-pressed={s.selected === m.input}
           onPointerDown={(e) => { select(m.input); grab(e, { mark: m.input }) }}>
           {markLabel(m.input)}
         </button>
       ))}
       {crop && <FrameBox crop={crop} label={s.mode === 'card' ? t('editor.mode.card') : device.views[s.view]?.name ?? ''}
         onGrab={(e) => { const p = point(e); grab(e, { dx: p.x - crop.x, dy: p.y - crop.y }) }} onGrabCorner={(e) => grab(e, 'corner')} />}
+    </div>
+  )
+}
+
+function ViewCanvas({ view }: { view: Frame }) {
+  const s = useEditor()
+  const device = s.device!
+  const box = useRef<HTMLDivElement>(null)
+  const drag = useRef<{ layer: number; input: string } | null>(null)
+  const startedOnItem = useRef(false)
+  const marks = viewMarks(device, view)
+  const [held, setHeld] = useState<Required<Crop> | null>(null)
+  const area = held ?? markExtent(marks)
+  const { width, height } = frameLayout(device, view)
+  const point = (e: PointerEvent | MouseEvent) => {
+    const r = box.current!.getBoundingClientRect()
+    return { x: area.x + (e.clientX - r.left) / r.width * area.w, y: area.y + (e.clientY - r.top) / r.height * area.h }
+  }
+  const at = (x: number, y: number) => ({ left: `${(x - area.x) / area.w * 100}%`, top: `${(y - area.y) / area.h * 100}%` })
+  const stop = () => { drag.current = null; setHeld(null) }
+  return (
+    <div ref={box} className={cx(styles.canvas, styles.placing)} style={{ aspectRatio: `${width * area.w} / ${height * area.h}`, width: `min(100%, calc((100vh - 440px) * ${width * area.w / (height * area.h)}))` }}
+      onPointerMove={(e) => { const d = drag.current; if (d) { const p = point(e); moveInView(d.layer, d.input, p.x, p.y) } }}
+      onPointerUp={stop} onPointerCancel={stop}
+      onClick={(e) => { if (startedOnItem.current) { startedOnItem.current = false; return } const p = point(e); placeInView(p.x, p.y) }}>
+      <div className={styles.whole} style={{ ...at(0, 0), width: `${10000 / area.w}%`, height: `${10000 / area.h}%` }}>
+        <DevicePicture device={device} frame={view} />
+      </div>
+      {marks.map((m) => (
+        <button key={`${m.layer}:${m.input}`} type="button" className={cx(styles.mark, isAxisKey(m.input) && styles.axisMark, s.selected === m.input && styles.selected)}
+          style={at(m.x, m.y)} title={`${inputLabel(m.input)} · ${m.picture}`} aria-label={inputLabel(m.input)} aria-pressed={s.selected === m.input}
+          onPointerDown={(e) => {
+            e.stopPropagation()
+            select(m.input)
+            drag.current = { layer: m.layer, input: m.input }
+            startedOnItem.current = true
+            setHeld(area)
+            box.current!.setPointerCapture(e.pointerId)
+          }}>
+          {markLabel(m.input)}
+        </button>
+      ))}
     </div>
   )
 }
@@ -151,6 +202,7 @@ export function WorkArea() {
   const s = useEditor()
   const device = s.device!
   const frame = s.mode === 'buttons' ? null : frameOf(s)
+  const whole = s.mode === 'buttons' && s.whole !== null ? device.views[s.whole] ?? null : null
   const picture = s.mode === 'buttons' ? s.picture : frame && !frame.layers ? frame.picture : null
   return (
     <section className={styles.center} aria-labelledby="work">
@@ -162,6 +214,7 @@ export function WorkArea() {
       </div>
       <Bar />
       {!Object.keys(device.pictures).length ? <DropZone />
+        : whole ? <ViewCanvas view={whole} />
         : frame?.layers ? <div className={styles.canvas}><DevicePicture device={device} frame={frame} /></div>
           : picture ? <Canvas picture={picture} /> : null}
       {picture && s.mode !== 'buttons' && <CropFields />}
