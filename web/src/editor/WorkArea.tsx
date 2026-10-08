@@ -105,6 +105,9 @@ function Canvas({ picture }: { picture: string }) {
       onPointerMove={onMove} onPointerUp={() => { drag.current = null; setHeld(null) }} onPointerCancel={() => { drag.current = null; setHeld(null) }} onClick={onClick}>
       <img src={pictureUrl(device, picture)} alt="" draggable={false}
         style={{ ...at(0, 0), width: `${10000 / area.w}%`, height: `${10000 / area.h}%` }} />
+      {s.mode === 'buttons' && s.original && (
+        <Ghosts area={area} moved={movedFrom(marksOf(s.original, picture).map((m) => ({ ...m, key: m.input })), marksOf(device, picture).map((m) => ({ ...m, key: m.input })))} />
+      )}
       {s.mode === 'buttons' && marksOf(device, picture).map((m) => (
         <button key={m.input} type="button" className={cx(styles.mark, isAxisKey(m.input) && styles.axisMark, s.selected === m.input && styles.selected)}
           style={at(m.x, m.y)} title={inputLabel(m.input)} aria-label={inputLabel(m.input)} aria-pressed={s.selected === m.input}
@@ -142,6 +145,9 @@ function ViewCanvas({ view }: { view: Frame }) {
       <div className={styles.whole} style={{ ...at(0, 0), width: `${10000 / area.w}%`, height: `${10000 / area.h}%` }}>
         <DevicePicture device={device} frame={view} />
       </div>
+      {s.original && (
+        <Ghosts area={area} moved={movedFrom(viewMarks(s.original, view).map((m) => ({ ...m, key: `${m.layer}:${m.input}` })), marks.map((m) => ({ ...m, key: `${m.layer}:${m.input}` })))} />
+      )}
       {marks.map((m) => (
         <button key={`${m.layer}:${m.input}`} type="button" className={cx(styles.mark, isAxisKey(m.input) && styles.axisMark, s.selected === m.input && styles.selected)}
           style={at(m.x, m.y)} title={`${inputLabel(m.input)} · ${m.picture}`} aria-label={inputLabel(m.input)} aria-pressed={s.selected === m.input}
@@ -158,6 +164,38 @@ function ViewCanvas({ view }: { view: Frame }) {
       ))}
     </div>
   )
+}
+
+interface Moved {
+  key: string
+  input: string
+  from: { x: number; y: number }
+  to: { x: number; y: number }
+}
+
+function Ghosts({ moved, area }: { moved: Moved[]; area: Required<Crop> }) {
+  const sx = (x: number) => (x - area.x) / area.w * 100
+  const sy = (y: number) => (y - area.y) / area.h * 100
+  return (
+    <>
+      <svg className={styles.ghostLines} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        {moved.map((m) => <line key={m.key} x1={sx(m.from.x)} y1={sy(m.from.y)} x2={sx(m.to.x)} y2={sy(m.to.y)} />)}
+      </svg>
+      {moved.map((m) => (
+        <span key={m.key} className={cx(styles.mark, styles.ghost, isAxisKey(m.input) && styles.axisMark)} style={{ left: `${sx(m.from.x)}%`, top: `${sy(m.from.y)}%` }} aria-hidden="true">
+          {markLabel(m.input)}
+        </span>
+      ))}
+    </>
+  )
+}
+
+function movedFrom(before: { key: string; input: string; x: number; y: number }[], after: { key: string; input: string; x: number; y: number }[]): Moved[] {
+  const was = new Map(before.map((m) => [m.key, m]))
+  return after.flatMap((m) => {
+    const o = was.get(m.key)
+    return o && (o.x !== m.x || o.y !== m.y) ? [{ key: m.key, input: m.input, from: { x: o.x, y: o.y }, to: { x: m.x, y: m.y } }] : []
+  })
 }
 
 interface FrameBoxProps {
