@@ -22,6 +22,8 @@ export interface EditorState {
   whole: number | null
   view: number
   selected: string | null
+  selectedLayer: number | null
+  snap: boolean
   reported: string[]
   padName: string | null
   message: string
@@ -35,10 +37,21 @@ export interface Kept {
   maker: string
 }
 
+const SNAP = 'hotas-mapper-editor-snap'
+
 export const useEditor = create<EditorState>()(() => ({
   library: [], original: null, device: null, maker: '', files: {}, mode: 'buttons', picture: null, whole: null, view: 0,
-  selected: null, reported: [], padName: null, message: '', kept: {},
+  selected: null, selectedLayer: null, snap: readSnap(), reported: [], padName: null, message: '', kept: {},
 }))
+
+function readSnap() {
+  try { return localStorage.getItem(SNAP) !== 'off' } catch { return true }
+}
+
+export function setSnap(snap: boolean) {
+  try { localStorage.setItem(SNAP, snap ? 'on' : 'off') } catch { return set({ snap }) }
+  set({ snap })
+}
 
 const get = () => useEditor.getState()
 const set = (patch: Partial<EditorState>) => useEditor.setState(patch)
@@ -91,7 +104,7 @@ export function newDevice() {
 export const setMeta = (patch: Partial<Pick<Device, 'name' | 'role' | 'dcsName'>>) => set({ device: { ...get().device!, ...patch } })
 export const setMaker = (maker: string) => set({ maker })
 export const setMode = (mode: Mode) => set({ mode })
-export const select = (input: string | null) => set({ selected: input })
+export const select = (input: string | null, layer: number | null = null) => set({ selected: input, selectedLayer: layer })
 export const showPicture = (picture: string) => set({ picture, whole: null })
 export const showWhole = (view: number) => set({ whole: view })
 export const showView = (view: number) => set({ view })
@@ -161,7 +174,9 @@ export function moveMark(input: string, x: number, y: number) {
 
 export function takeOff(input: string) {
   const s = get()
-  if (s.device && wholeView(s)) set({ device: [...new Set(layersOf(s).map((l) => l.picture))].reduce((d, picture) => removeMark(d, picture, input), s.device) })
+  const picked = s.selectedLayer !== null && s.selected === input ? layersOf(s)[s.selectedLayer]?.picture : undefined
+  if (s.device && wholeView(s) && picked) set({ device: removeMark(s.device, picked, input), selectedLayer: null })
+  else if (s.device && wholeView(s)) set({ device: [...new Set(layersOf(s).map((l) => l.picture))].reduce((d, picture) => removeMark(d, picture, input), s.device) })
   else if (s.device && s.picture) set({ device: removeMark(s.device, s.picture, input) })
 }
 
