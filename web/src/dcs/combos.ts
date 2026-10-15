@@ -22,7 +22,7 @@ export function cleanCombo(c: Combo, withFilter = true): Combo {
   return clean
 }
 
-export function inputLabel(key: string) {
+export function pictureLabel(key: string) {
   const button = /^JOY_BTN(\d+)$/.exec(key)
   if (button) return `Btn ${button[1]}`
   const pov = /^JOY_BTN_POV(\d)_(\w+)$/.exec(key)
@@ -43,7 +43,8 @@ export function markLabel(input: string) {
   return input.replace(/^JOY_/, '').replace('SLIDER', 'S')
 }
 
-export const comboText = (combo: Combo) => [...(combo.reformers ?? []), inputLabel(combo.key)].join(' + ')
+export const comboText = (combo: Combo) => [...(combo.reformers ?? []), combo.key].join(' + ')
+export const pictureComboText = (combo: Combo) => [...(combo.reformers ?? []), pictureLabel(combo.key)].join(' + ')
 
 export function controlName(name: string) {
   const at = name.indexOf(' - ')

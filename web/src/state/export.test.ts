@@ -67,9 +67,9 @@ describe('changes shown before saving', () => {
     const before = { key: { [first.hash]: [{ key: 'JOY_BTN1' }] }, axis: {} }
     const after = { key: { [first.hash]: [{ key: 'JOY_BTN2' }], [second.hash]: [{ key: 'JOY_BTN3', reformers: ['LAlt'] }] }, axis: {} }
     const lines = comboChanges(profile, before, after, (text) => text)
-    expect(lines).toContainEqual({ sign: '-', name: first.name, text: 'Btn 1' })
-    expect(lines).toContainEqual({ sign: '+', name: first.name, text: 'Btn 2' })
-    expect(lines).toContainEqual({ sign: '+', name: second.name, text: 'LAlt + Btn 3' })
+    expect(lines).toContainEqual({ sign: '-', name: first.name, text: 'JOY_BTN1' })
+    expect(lines).toContainEqual({ sign: '+', name: first.name, text: 'JOY_BTN2' })
+    expect(lines).toContainEqual({ sign: '+', name: second.name, text: 'LAlt + JOY_BTN3' })
   })
 })
 

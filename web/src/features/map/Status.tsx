@@ -1,4 +1,4 @@
-import { comboId, comboText, inputLabel, isAxisKey } from '../../dcs/combos'
+import { comboId, comboText, isAxisKey } from '../../dcs/combos'
 import type { Combo, Command, Kind } from '../../dcs/types'
 import { useWords } from '../../i18n/i18n'
 import { freeUi, listen, removeCombo, toggleAdding } from '../../state/bindings'
@@ -17,7 +17,7 @@ function IssueBox({ s, entry, command, kind, combo }: { s: SessionState; entry: 
   const issue = comboIssue(s, entry, combo, command.hash)
   if (!issue) return null
   const name = tr(command.name)
-  const input = inputLabel(combo.key)
+  const input = combo.key
   const about = issue.code === 'uiLayer' ? trUi(issue.name) : 'name' in issue ? issue.name : ''
   const ui = 'ui' in issue ? issue : null
   const move = <Button key="move" small onClick={() => listen(command.hash, kind, name)}>{t('fix.move')}</Button>
@@ -70,7 +70,7 @@ export function StatusCard({ s, entry }: { s: SessionState; entry: Entry }) {
           <Chips>
             {modifierNames(modifiers).map((name) => (
               <Chip key={name} look="onDark" pressed={adding.includes(name)} onClick={() => toggleAdding(name)}
-                title={modifiers[name].device === 'Keyboard' ? t('mods.keyboard') : `${deviceLabel(s, modifiers[name].device)} · ${inputLabel(modifiers[name].key)}`}>{name}</Chip>
+                title={modifiers[name].device === 'Keyboard' ? t('mods.keyboard') : `${deviceLabel(s, modifiers[name].device)} · ${modifiers[name].key}`}>{name}</Chip>
             ))}
             <Chip look="dashed" onClick={() => openMods({ adding: 'modifier' })}>{t('map.newModifier')}</Chip>
           </Chips>
@@ -99,15 +99,15 @@ export function StatusCard({ s, entry }: { s: SessionState; entry: Entry }) {
     ...ui.map((u, i) => <li key={`ui${i}`}>{t('map.uiUses', { name: trUi(u.name) })}</li>),
   ]
   if (ui.length && !using.some((u) => !u.combo.reformers?.length)) {
-    const example = `${modifierNames(modifiers)[0] ?? 'LAlt'} + ${inputLabel(focus)}`
-    lines.push(<li key="needs" className="muted small">{t('map.uiNeedsModifier', { input: inputLabel(focus), example })}</li>)
+    const example = `${modifierNames(modifiers)[0] ?? 'LAlt'} + ${focus}`
+    lines.push(<li key="needs" className="muted small">{t('map.uiNeedsModifier', { input: focus, example })}</li>)
   }
   const modifierButton = isAxisKey(focus) || !entry.dcsId.includes('{') ? null
     : modifier ? <Button small onClick={() => removeModifier(modifier)}>{t('map.dropModifier')}</Button>
       : <Button small onClick={() => openMods({ adding: 'modifier', device: entry.dcsId, key: focus })}>{t('map.makeModifier')}</Button>
   return (
     <div className={cx(styles.status, styles.focused)} role="status">
-      <span className="eyebrow">{t('map.youPressed', { input: inputLabel(focus) })}</span>
+      <span className="eyebrow">{t('map.youPressed', { input: focus })}</span>
       {modifier && <strong className={styles.modifierText}>{t('map.isModifier', { name: modifier })}</strong>}
       {lines.length ? <ul className="plain">{lines}</ul> : !modifier && <strong className={styles.freeText}>{t('map.nothingYet')}</strong>}
       {using.map((u, i) => <IssueBox key={i} s={s} entry={entry} command={u.command} kind={u.kind} combo={u.combo} />)}

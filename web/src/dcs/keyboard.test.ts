@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { inputLabel, isAxisKey, markLabel } from './combos'
+import { comboText, isAxisKey, markLabel, pictureLabel } from './combos'
 import { dcsKey, KEYBOARD_ROWS } from './keyboard'
 
 describe('keys as DCS names them', () => {
@@ -25,9 +25,13 @@ describe('mouse inputs', () => {
     expect(['MOUSE_X', 'MOUSE_Z', 'MOUSE_BTN3', 'JOY_X'].map(isAxisKey)).toEqual([true, true, false, true])
   })
 
-  it('names mouse inputs the same in the table and on the picture', () => {
+  it('names mouse inputs the same on the mark and in its callout', () => {
     const inputs = ['MOUSE_BTN1', 'MOUSE_BTN2', 'MOUSE_BTN3', 'MOUSE_BTN4', 'MOUSE_BTN5', 'MOUSE_X', 'MOUSE_Y', 'MOUSE_Z']
     expect(inputs.map(markLabel)).toEqual(['L', 'R', 'M', '4', '5', 'X', 'Y', 'Z'])
-    expect(inputs.map(inputLabel)).toEqual(inputs.map((input) => `Mouse ${markLabel(input)}`))
+    expect(inputs.map(pictureLabel)).toEqual(inputs.map((input) => `Mouse ${markLabel(input)}`))
+  })
+
+  it('shows a mouse binding as DCS shows it in the table', () => {
+    expect(comboText({ key: 'MOUSE_BTN3', reformers: ['LAlt'] })).toBe('LAlt + MOUSE_BTN3')
   })
 })

@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { inputLabel, isAxisKey, markLabel } from '../../dcs/combos'
+import { isAxisKey, markLabel } from '../../dcs/combos'
 import { frameLayout, pct } from '../../data/frame'
 import type { Device, Frame } from '../../data/types'
 import { usePads } from '../../gamepad/store'
@@ -125,8 +125,8 @@ export function MapPicture({ s, entry, highlight }: { s: SessionState; entry: En
       using.map((u) => tr(u.command.name)).join('; '),
     ].filter(Boolean)
     const wrong = !!listening && isAxisKey(input) !== (listening.kind === 'axis')
-    const needs = wrong ? t(listening.kind === 'axis' ? 'map.needsAxis' : 'map.needsButton', { command: listening.name, input: inputLabel(input) }) : ''
-    const title = [needs, lit ? t('map.inOpen') : '', inputLabel(input), ...(parts.length ? parts : [t('map.free')])].filter(Boolean).join(' — ')
+    const needs = wrong ? t(listening.kind === 'axis' ? 'map.needsAxis' : 'map.needsButton', { command: listening.name, input }) : ''
+    const title = [needs, lit ? t('map.inOpen') : '', input, ...(parts.length ? parts : [t('map.free')])].filter(Boolean).join(' — ')
     return { kind: selected ? 'sel' : kind, lit, wrong, title }
   }
   const callouts = (input: string) => (calloutShown(input, { focus, hovered, highlight }) ? keyLines(s, entry, input) : null)

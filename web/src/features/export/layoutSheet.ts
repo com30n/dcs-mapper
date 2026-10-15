@@ -1,5 +1,5 @@
 import i18n from 'i18next'
-import { inputLabel, markLabel } from '../../dcs/combos'
+import { markLabel, pictureLabel } from '../../dcs/combos'
 import { allViews, frameLayout, MARK_SCALE } from '../../data/frame'
 import { pictureUrl } from '../../data/load'
 import { tr } from '../../i18n/i18n'
@@ -185,7 +185,7 @@ export async function drawSheet(s: SessionState, entry: Entry): Promise<Blob> {
 
   const modifiers = Object.entries(setupOf(s).modifiers ?? {})
   const own = modifiers.filter(([, m]) => m.device === entry.dcsId)
-    .map(([name, m]) => `${name} = ${inputLabel(m.key)} (${i18n.t(m.switch ? 'sheet.switch' : 'sheet.hold')})`)
+    .map(([name, m]) => `${name} = ${pictureLabel(m.key)} (${i18n.t(m.switch ? 'sheet.switch' : 'sheet.hold')})`)
   const keyboard = modifiers.filter(([, m]) => m.device === 'Keyboard').map(([name]) => name)
   ctx.strokeStyle = '#D6DCE3'
   ctx.beginPath()

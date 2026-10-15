@@ -1,4 +1,3 @@
-import { inputLabel } from '../dcs/combos'
 import { useWords } from '../i18n/i18n'
 import { Button } from '../ui/Button'
 import { cx } from '../ui/cx'
@@ -25,7 +24,7 @@ function Inputs() {
             <li key={input}>
               <button type="button" aria-pressed={selected} className={cx(styles.input, selected ? styles.inputSelected : on ? styles.inputPlaced : styles.inputOpen)}
                 onClick={() => select(input)}>
-                {selected ? '● ' : on ? '✓ ' : '○ '}{inputLabel(input)}
+                {selected ? '● ' : on ? '✓ ' : '○ '}{input}
               </button>
             </li>
           )
@@ -35,7 +34,7 @@ function Inputs() {
       <label className={styles.field}>{t('editor.addInput')}
         <select className="text" value="" onChange={(e) => { if (e.target.value) addInput(e.target.value) }}>
           <option value="">{t('editor.pick')}</option>
-          {ALL_INPUTS.filter((input) => !all.includes(input)).map((input) => <option key={input} value={input}>{inputLabel(input)}</option>)}
+          {ALL_INPUTS.filter((input) => !all.includes(input)).map((input) => <option key={input} value={input}>{input}</option>)}
         </select>
       </label>
     </>

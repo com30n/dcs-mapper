@@ -2,7 +2,7 @@ import { structuredPatch } from 'diff'
 import { strToU8, zipSync } from 'fflate'
 import i18n from 'i18next'
 import { filterWithDefaults, isDefaultFilter } from '../dcs/axis'
-import { comboId, comboText, dcsCompare, inputLabel, KEYBOARD_MODIFIERS, sameId } from '../dcs/combos'
+import { comboId, comboText, dcsCompare, KEYBOARD_MODIFIERS, sameId } from '../dcs/combos'
 import { buildDiff, namesOf } from '../dcs/diff'
 import { FORCE_FEEDBACK_KEYS, forceFeedbackFor } from '../dcs/forceFeedback'
 import { luaFile } from '../dcs/lua'
@@ -100,7 +100,7 @@ export function modifierChanges(s: SessionState): Change[] {
   const setup = setupOf(s)
   const before = setup.modifiersBase ?? {}
   const after = setup.modifiers ?? {}
-  const text = (m: Modifier) => `${deviceLabel(s, m.device)} · ${inputLabel(m.key)} · ${t(m.switch ? 'export.switch' : 'export.hold')}`
+  const text = (m: Modifier) => `${deviceLabel(s, m.device)} · ${m.key} · ${t(m.switch ? 'export.switch' : 'export.hold')}`
   const lines: Change[] = []
   for (const name of new Set([...Object.keys(before), ...Object.keys(after)])) {
     if (JSON.stringify(before[name]) === JSON.stringify(after[name])) continue

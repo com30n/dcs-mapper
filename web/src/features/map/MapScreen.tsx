@@ -1,7 +1,6 @@
 import { useEffect, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router'
 import { useShallow } from 'zustand/react/shallow'
-import { inputLabel } from '../../dcs/combos'
 import { forceFeedbackFor } from '../../dcs/forceFeedback'
 import { dcsKey, KEYBOARD_MODIFIER_KEYS } from '../../dcs/keyboard'
 import { useWatchPads } from '../../gamepad/poll'
@@ -46,7 +45,7 @@ function PadPill({ s, column }: { s: SessionState; column: Column }) {
   return (
     <span className={cx(styles.pill, styles.pillOk)}>
       <i className={styles.liveDot} />
-      <span>{column.device.name} · {lastPressed ? t('map.lastPressed', { input: inputLabel(lastPressed), what }) : t('map.pressToSee')}</span>
+      <span>{column.device.name} · {lastPressed ? t('map.lastPressed', { input: lastPressed, what }) : t('map.pressToSee')}</span>
     </span>
   )
 }

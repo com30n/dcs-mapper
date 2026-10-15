@@ -1,5 +1,4 @@
 import { axisResponse } from '../../../dcs/axis'
-import { inputLabel } from '../../../dcs/combos'
 import { useWords } from '../../../i18n/i18n'
 import { saveTune } from '../../../state/bindings'
 import { percent } from '../../../state/export'
@@ -42,13 +41,13 @@ export function TuneDialog({ s, entry, dialog }: { s: SessionState; entry: Entry
   )
   return (
     <Modal size="wide" eyebrow={t('tune.eyebrow', { aircraft: tr(s.catalog!.name) })} title={tr(command.name)}
-      sub={t('tune.axisOf', { input: inputLabel(combo.key), device: s.devices[entry.deviceId].name })} onClose={closeDialog} foot={foot}>
+      sub={t('tune.axisOf', { input: combo.key, device: s.devices[entry.deviceId].name })} onClose={closeDialog} foot={foot}>
       {combos.length > 1 && (
         <div className={styles.axes} role="group" aria-label={t('tune.axes')}>
           <span>{t('tune.axes')}</span>
           <Chips>
             {combos.map((c, i) => (
-              <Chip key={c.key} className="mono" pressed={i === dialog.at} onClick={() => editTune((x) => { x.at = i })}>{inputLabel(c.key)}</Chip>
+              <Chip key={c.key} className="mono" pressed={i === dialog.at} onClick={() => editTune((x) => { x.at = i })}>{c.key}</Chip>
             ))}
           </Chips>
         </div>

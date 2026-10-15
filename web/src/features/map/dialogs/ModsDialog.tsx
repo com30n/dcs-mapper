@@ -1,4 +1,4 @@
-import { inputLabel, sameId } from '../../../dcs/combos'
+import { sameId } from '../../../dcs/combos'
 import { useWords } from '../../../i18n/i18n'
 import { deviceLabel } from '../../../state/lookup'
 import { closeDialog } from '../../../state/mapUi'
@@ -28,9 +28,9 @@ function AddForm({ s, dialog }: { s: SessionState; dialog: ModsState }) {
   const warnings: [boolean, string][] = []
   if (key && owner) {
     const using = commandsUsing(s, owner, key).filter((u) => !u.combo.reformers)
-    if (using.length) warnings.push([false, t('mods.busy', { input: inputLabel(key), command: using.map((u) => tr(u.command.name)).join('; ') })])
+    if (using.length) warnings.push([false, t('mods.busy', { input: key, command: using.map((u) => tr(u.command.name)).join('; ') })])
     const ui = uiCombos(s, owner).find((u) => u.combo.key === key && !u.combo.reformers)
-    if (ui) warnings.push([false, t('mods.uiBusy', { name: trUi(ui.name), input: inputLabel(key) })])
+    if (ui) warnings.push([false, t('mods.uiBusy', { name: trUi(ui.name), input: key })])
     const twin = Object.keys(all).find((n) => sameId(all[n].device, owner.dcsId) && all[n].key === key)
     if (twin) warnings.push([true, t('mods.twin', { name: twin })])
   }
@@ -54,7 +54,7 @@ function AddForm({ s, dialog }: { s: SessionState; dialog: ModsState }) {
         <label className={styles.fieldBlock}>{t('mods.key')}
           <select className="text mono" value={key} onChange={(e) => editMods({ key: e.target.value, name: null })}>
             <option value="">{t('mods.pick')}</option>
-            {numbers.map((n) => <option key={n} value={`JOY_BTN${n}`}>Btn {n}</option>)}
+            {numbers.map((n) => <option key={n} value={`JOY_BTN${n}`}>{`JOY_BTN${n}`}</option>)}
           </select>
         </label>
         <label className={cx(styles.fieldBlock, styles.fieldGrow)}>{t('mods.name')}
@@ -84,7 +84,7 @@ function Columns({ s }: { s: SessionState }) {
         <div className="stack">
           <input key={name} className={cx('text', styles.strong)} defaultValue={name} aria-label={t('mods.name')}
             onBlur={(e) => renameModifier(name, e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} />
-          <span className="mono small">{`${deviceLabel(s, m.device)} · ${inputLabel(m.key)}`}</span>
+          <span className="mono small">{`${deviceLabel(s, m.device)} · ${m.key}`}</span>
           <span className={cx('small', uses ? 'warn-text' : 'muted')}>{uses ? t('mods.uses', { count: uses }) : t('mods.unused')}</span>
         </div>
         <Button variant="icon" aria-label={t('mods.remove', { name })} onClick={() => removeModifier(name)}>×</Button>

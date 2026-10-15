@@ -1,5 +1,5 @@
 import { useRef, useState, type PointerEvent, type MouseEvent } from 'react'
-import { inputLabel, isAxisKey, markLabel } from '../dcs/combos'
+import { isAxisKey, markLabel } from '../dcs/combos'
 import { pictureUrl } from '../data/load'
 import { frameLayout } from '../data/frame'
 import type { Crop, Frame, Mark } from '../data/types'
@@ -33,7 +33,7 @@ function Bar() {
   const all = allInputs(s)
   const placed = placedInputs(s)
   const text = !s.picture && !view ? t('editor.bar.first')
-    : selected ? t(here ? 'editor.bar.move' : 'editor.bar.place', { input: inputLabel(selected) })
+    : selected ? t(here ? 'editor.bar.move' : 'editor.bar.place', { input: selected })
       : all.length && all.every((input) => placed.has(input)) ? t('editor.bar.done') : t('editor.bar.pick')
   const moved = !!s.original?.id && changeCount(s.original, s.device) > 0
   return (
@@ -46,7 +46,7 @@ function Bar() {
         <label className={styles.snap} title={t('editor.gridHint')}>
           <input type="checkbox" checked={s.grid} onChange={(e) => setGrid(e.target.checked)} />{t('editor.grid')}
         </label>
-        {here && <Button variant="ghost" small onClick={() => takeOff(selected)}>{t(copies > 1 ? 'editor.removeCopy' : 'editor.remove', { input: inputLabel(selected) })}</Button>}
+        {here && <Button variant="ghost" small onClick={() => takeOff(selected)}>{t(copies > 1 ? 'editor.removeCopy' : 'editor.remove', { input: selected })}</Button>}
         {moved && <Button variant="ghost" small onClick={resetMarks}>{t('editor.reset')}</Button>}
       </span>
     </div>
@@ -125,7 +125,7 @@ function Canvas({ picture }: { picture: string }) {
         {s.mode === 'buttons' && <Guides pointer={pointer} area={area} />}
         {s.mode === 'buttons' && marksOf(device, picture).map((m) => (
           <button key={m.input} type="button" className={cx(styles.mark, isAxisKey(m.input) && styles.axisMark, s.selected === m.input && styles.selected)}
-            style={at(m.x, m.y)} title={inputLabel(m.input)} aria-label={inputLabel(m.input)} aria-pressed={s.selected === m.input}
+            style={at(m.x, m.y)} title={m.input} aria-label={m.input} aria-pressed={s.selected === m.input}
             onPointerDown={(e) => { if (e.button !== 0) return; select(m.input); grab(e, { mark: m.input }) }}
             onContextMenu={offer(() => markMenu(t, m.input, 1, () => { select(m.input); takeOff(m.input) }))}>
             {markLabel(m.input)}
@@ -178,7 +178,7 @@ function ViewCanvas({ view }: { view: Frame }) {
         <Guides pointer={pointer} area={area} />
         {marks.map((m) => (
           <button key={`${m.layer}:${m.input}`} type="button" className={cx(styles.mark, isAxisKey(m.input) && styles.axisMark, s.selected === m.input && (s.selectedLayer === null || s.selectedLayer === m.layer) && styles.selected)}
-            style={at(m.x, m.y)} title={`${inputLabel(m.input)} · ${m.picture}`} aria-label={inputLabel(m.input)} aria-pressed={s.selected === m.input}
+            style={at(m.x, m.y)} title={`${m.input} · ${m.picture}`} aria-label={m.input} aria-pressed={s.selected === m.input}
             onContextMenu={offer(() => markMenu(t, m.input, copies(m.input), () => { select(m.input, m.layer); takeOff(m.input) }))}
             onPointerDown={(e) => {
               e.stopPropagation()
@@ -200,14 +200,14 @@ function ViewCanvas({ view }: { view: Frame }) {
 type Words = ReturnType<typeof useWords>['t']
 
 function markMenu(t: Words, input: string, copies: number, remove: () => void): MenuItem[] {
-  return [{ label: t(copies > 1 ? 'editor.removeCopy' : 'editor.remove', { input: inputLabel(input) }), run: remove, tone: 'warn' }]
+  return [{ label: t(copies > 1 ? 'editor.removeCopy' : 'editor.remove', { input }), run: remove, tone: 'warn' }]
 }
 
 function canvasMenu(t: Words, putHere: () => void): MenuItem[] {
   const s = useEditor.getState()
   const moved = !!s.original?.id && changeCount(s.original, s.device) > 0
   return [
-    ...(s.selected ? [{ label: t('menu.putHere', { input: inputLabel(s.selected) }), run: putHere }] : []),
+    ...(s.selected ? [{ label: t('menu.putHere', { input: s.selected }), run: putHere }] : []),
     ...(moved ? [{ label: t('editor.reset'), run: resetMarks }] : []),
     ...(s.selected || moved ? ['line' as const] : []),
     { label: t('editor.snap'), on: s.snap, turn: setSnap },
