@@ -3,7 +3,7 @@ import { useWords } from '../i18n/i18n'
 import { changeLanguage } from '../state/aircraft'
 import { useSession } from '../state/session'
 import { cx } from '../ui/cx'
-import { BrandIcon } from '../ui/icons'
+import { BrandIcon, GitHubIcon } from '../ui/icons'
 import styles from './Header.module.css'
 import { pathOf, stepAt, stepAvailable, STEPS } from './steps'
 
@@ -29,6 +29,7 @@ export function Header() {
             <button key={l.code} type="button" aria-pressed={l.code === lang} onClick={() => changeLanguage(l.code)}>{l.label}</button>
           ))}
         </div>
+        <a className={styles.repo} href="https://github.com/com30n/dcs-mapper" target="_blank" rel="noopener" aria-label={t('app.source')} title={t('app.source')}><GitHubIcon /></a>
       </header>
       {s.message && <div className={styles.banner} role="status">{s.message}</div>}
     </>

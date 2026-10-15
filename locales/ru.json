@@ -4,6 +4,7 @@
   "app.name": "HOTAS Mapper",
   "app.for": "для DCS World",
   "app.language": "Язык",
+  "app.source": "Исходный код на GitHub",
   "step.label": "Шаги",
   "step.aircraft": "Самолёт",
   "step.devices": "Устройства",
